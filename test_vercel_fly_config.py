@@ -71,14 +71,8 @@ def test_vercel_json():
     # Check rewrites
     rewrites = data.get("rewrites", [])
     api_rewrite = any("/api/:path*" in r.get("source", "") and ".fly.dev" in r.get("destination", "") for r in rewrites)
-    sw_rewrite = any("/sw.js" in r.get("source", "") for r in rewrites)
-    static_rewrite = any("/static/:path*" in r.get("source", "") for r in rewrites)
-    fallback_rewrite = any("/(.*)" in r.get("source", "") and "index.html" in r.get("destination", "") for r in rewrites)
-
     assert api_rewrite, "Missing /api/:path* rewrite to Fly.io backend in vercel.json"
-    assert sw_rewrite, "Missing /sw.js rewrite in vercel.json"
-    assert static_rewrite, "Missing /static/:path* rewrite in vercel.json"
-    assert fallback_rewrite, "Missing SPA fallback rewrite to index.html in vercel.json"
+    assert data.get("buildCommand") == "npm run build", "Missing npm run build in vercel.json"
 
 
 def test_dockerfile_seed():

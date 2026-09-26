@@ -1,0 +1,9 @@
+{
+  "name": "haq-saathi",
+  "version": "1.0.0",
+  "description": "Voice-First Consent-Based Welfare Entitlement Navigator",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('static')) fs.cpSync('frontend', 'static', {recursive:true}); fs.copyFileSync('frontend/sw.js', 'sw.js'); fs.copyFileSync('frontend/manifest.json', 'manifest.json'); fs.copyFileSync('frontend/index.html', 'index.html');\""
+  }
+}

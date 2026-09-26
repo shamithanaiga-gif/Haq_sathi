@@ -2,22 +2,44 @@
 <html lang="kn">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=http://localhost:8000/">
-  <title>Haq Saathi - ಹಕ್ಕು ಸಾಥಿ | Welfare Navigator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Haq Saathi - ಹಕ್ಕು ಸಾಥಿ | Voice-First Welfare Entitlement Navigator</title>
+  <meta name="description" content="Voice-first, consent-based entitlement navigator for migrant workers and low-literacy citizens in Kannada and English">
+  <meta name="theme-color" content="#059669">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- React 18 & Babel Standalone for JSX runtime -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root">
+    <div style="padding: 40px; text-align: center; color: #065f46; font-family: sans-serif;">
+      <h2>ಲೋಡ್ ಆಗುತ್ತಿದೆ... (Loading Haq Saathi...)</h2>
+      <p>Initializing voice-first entitlement assistant...</p>
+    </div>
+  </div>
+
+  <!-- PWA Service Worker Registration -->
   <script>
-    if (window.location.protocol === 'file:') {
-      window.location.href = './frontend/index.html';
-    } else if (window.location.port !== '8000') {
-      window.location.href = 'http://localhost:8000/';
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js').catch((err) => {
+          console.log('SW registration error:', err);
+        });
+      });
     }
   </script>
-</head>
-<body style="font-family: system-ui, sans-serif; text-align: center; padding: 60px 20px; background: #f8fafc; color: #064e3b;">
-  <div style="font-size: 48px; margin-bottom: 16px;">🏛️</div>
-  <h2>ಹಕ್ ಸಾಥಿ (Haq Saathi)</h2>
-  <p style="color: #475569; margin: 12px 0 24px 0;">Opening voice-first entitlement assistant...</p>
-  <a href="http://localhost:8000/" style="background: #059669; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
-    Open http://localhost:8000
-  </a>
+
+  <!-- App Scripts -->
+  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/voice.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script type="text/babel" src="/static/js/app.js"></script>
 </body>
 </html>

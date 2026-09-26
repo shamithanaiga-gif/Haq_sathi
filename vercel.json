@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "cleanUrls": true,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
@@ -79,22 +80,6 @@
     {
       "source": "/openapi.json",
       "destination": "https://haq-saathi-backend.fly.dev/openapi.json"
-    },
-    {
-      "source": "/sw.js",
-      "destination": "/frontend/sw.js"
-    },
-    {
-      "source": "/manifest.json",
-      "destination": "/frontend/manifest.json"
-    },
-    {
-      "source": "/static/:path*",
-      "destination": "/frontend/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/index.html"
     }
   ]
 }
