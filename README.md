@@ -112,10 +112,42 @@ Then open your browser at:
 👉 **`http://127.0.0.1:8000`**
 
 ### 3. Running the Verification Suite
-Execute the Section 10 End-to-End automated test suite:
+Execute the Section 11 End-to-End automated test suite:
 ```bash
-python test_section10_e2e.py
+python test_section11_e2e.py
 ```
+
+---
+
+## 🔒 Scalable HTTPS & Ingress Layer
+
+HTTPS is mandatory for modern mobile browsers to grant **Microphone permissions** to the Web Speech API and enable Service Worker PWA installation.
+
+### Production Containerized Deployment (Docker Compose)
+- **NGINX + Let's Encrypt**:
+  ```bash
+  cp .env.example .env
+  ./scripts/init_letsencrypt.sh
+  ```
+- **Zero-Touch Caddy Server**:
+  ```bash
+  export DOMAIN="haqsaathi.org"
+  docker compose -f docker-compose.caddy.yml up -d
+  ```
+
+### Mobile Smartphone Testing (Zero-Domain Setup)
+Test microphone input on physical Android & iOS devices over Wi-Fi without buying a domain:
+```bash
+# Instant Cloudflare Quick Tunnel (Public HTTPS, zero signup)
+python run_local_https.py --mode tunnel
+
+# Or Local Wi-Fi LAN TLS (https://<LAN-IP>:8443)
+python run_local_https.py --mode lan
+
+# Verify HTTPS ingress configuration:
+python test_https_ingress.py
+```
+For detailed configuration, see the [HTTPS Deployment Guide](file:///c:/Users/shrey/Downloads/final/HTTPS_DEPLOYMENT_GUIDE.md).
 
 ---
 

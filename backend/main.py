@@ -42,6 +42,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Permissions-Policy"] = "microphone=(self)"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    return response
+
 SCHEMES_FILE = os.path.join(DATA_DIR, "schemes_rules.json")
 
 
@@ -733,3 +745,31 @@ def serve_index():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "Haq Saathi backend running. Place frontend in /frontend/index.html"}
+
+
+@app.get("/sw.js")
+def serve_sw():
+    sw_file = os.path.join(FRONTEND_DIR, "sw.js")
+    if os.path.exists(sw_file):
+        return FileResponse(
+            sw_file,
+            media_type="application/javascript",
+            headers={
+                "Service-Worker-Allowed": "/",
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        )
+    raise HTTPException(status_code=404, detail="Service worker not found")
+
+
+@app.get("/manifest.json")
+def serve_manifest():
+    manifest_file = os.path.join(FRONTEND_DIR, "manifest.json")
+    if os.path.exists(manifest_file):
+        return FileResponse(
+            manifest_file,
+            media_type="application/manifest+json",
+            headers={"Cache-Control": "no-cache"}
+        )
+    raise HTTPException(status_code=404, detail="Manifest not found")
+
