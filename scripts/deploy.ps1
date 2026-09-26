@@ -13,7 +13,7 @@ $RootDir = Split-Path -Parent $ScriptDir
 Set-Location $RootDir
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  🏛️  Haq Saathi - Production Zero-Downtime Deployment" -ForegroundColor Green
+Write-Host "  Haq Saathi - Production Zero-Downtime Deployment" -ForegroundColor Green
 Write-Host "======================================================================" -ForegroundColor Cyan
 
 # 1. Environment Configuration Check
@@ -22,17 +22,33 @@ if (-not (Test-Path $EnvPath)) {
     $FallbackEnv = Join-Path $RootDir ".env"
     if (Test-Path $FallbackEnv) {
         $EnvPath = $FallbackEnv
-        Write-Host "ℹ️  Using existing .env file." -ForegroundColor Yellow
+        Write-Host "Using existing .env file." -ForegroundColor Yellow
     } else {
-        Write-Host "⚠️  $EnvFile not found! Copying from .env.production.example..." -ForegroundColor Yellow
+        Write-Host "$EnvFile not found! Copying from .env.production.example..." -ForegroundColor Yellow
         Copy-Item (Join-Path $RootDir ".env.production.example") $EnvPath
-        Write-Host "👉 Created $EnvFile. Please configure your DOMAIN_NAME." -ForegroundColor Cyan
+        Write-Host "Created $EnvFile. Please configure your DOMAIN_NAME." -ForegroundColor Cyan
     }
 }
 
-# 2. Check Docker
+# 2. Check and ensure Docker is in PATH
+$DockerBin = "C:\Program Files\Docker\Docker\resources\bin"
+if ((Test-Path $DockerBin) -and ($env:Path -notlike "*$DockerBin*")) {
+    $env:Path = "$DockerBin;$env:Path"
+}
+
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Error: 'docker' command is not installed or not in PATH." -ForegroundColor Red
+    Write-Host "Error: Docker command is not installed or not in PATH." -ForegroundColor Red
+    exit 1
+}
+
+# Check if Docker daemon is actively running
+& docker info >$null 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "[!] Docker Engine is not running yet!" -ForegroundColor Yellow
+    Write-Host "Please open the 'Docker Desktop' app from your Windows Start Menu." -ForegroundColor Cyan
+    Write-Host "Wait 30-60 seconds until the Docker whale icon shows 'Engine running'." -ForegroundColor Cyan
+    Write-Host "Then run .\scripts\deploy.ps1 again." -ForegroundColor Green
     exit 1
 }
 
@@ -45,12 +61,12 @@ if (-not (Test-Path $DataDir)) {
 # 4. Validate Compose configuration
 Write-Host "==> Validating Docker Compose configuration..." -ForegroundColor Cyan
 docker compose --env-file $EnvPath -f docker-compose.prod.yml config | Out-Null
-Write-Host "✓ Docker Compose YAML configuration is valid." -ForegroundColor Green
+Write-Host "Docker Compose YAML configuration is valid." -ForegroundColor Green
 
 # 5. Build and launch
 Write-Host "==> Building images and launching containers..." -ForegroundColor Cyan
 docker compose --env-file $EnvPath -f docker-compose.prod.yml up -d --build --remove-orphans
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  🎉 Haq Saathi Deployed Successfully via Docker Compose!" -ForegroundColor Green
+Write-Host "  Haq Saathi Deployed Successfully via Docker Compose!" -ForegroundColor Green
 Write-Host "======================================================================" -ForegroundColor Cyan
