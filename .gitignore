@@ -123,3 +123,4 @@ data/user_profile.json
 .certs/
 certbot/
 
+.vercel
