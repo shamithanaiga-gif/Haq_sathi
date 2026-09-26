@@ -54,6 +54,24 @@ async def add_security_headers(request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     return response
 
+
+def ensure_seed_data():
+    """Populates DATA_DIR from data_seed if running with a fresh empty mounted cloud volume (Fly.io)."""
+    seed_dir = os.path.join(BASE_DIR, "data_seed")
+    if os.path.exists(seed_dir):
+        os.makedirs(DATA_DIR, exist_ok=True)
+        import shutil
+        for fname in os.listdir(seed_dir):
+            target = os.path.join(DATA_DIR, fname)
+            if not os.path.exists(target):
+                try:
+                    shutil.copy2(os.path.join(seed_dir, fname), target)
+                except Exception:
+                    pass
+
+
+ensure_seed_data()
+
 SCHEMES_FILE = os.path.join(DATA_DIR, "schemes_rules.json")
 
 

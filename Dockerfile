@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source code and mock data
 COPY backend/ ./backend/
 COPY data/ ./data/
+COPY data/ ./data_seed/
 COPY frontend/ ./frontend/
 COPY run.py .
 
