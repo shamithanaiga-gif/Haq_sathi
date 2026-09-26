@@ -1,0 +1,96 @@
+{
+  "vault_owner": {
+    "user_id": "usr_ramesh_001",
+    "name": "Ramesh Naik",
+    "phone": "+91 98450 XXXXX",
+    "auth_source": "DigiLocker Mock Sandbox"
+  },
+  "documents": {
+    "aadhaar_card": {
+      "doc_id": "doc_aadhaar_8829",
+      "doc_type": "aadhaar_card",
+      "doc_title_en": "UIDAI Aadhaar Card",
+      "doc_title_kn": "ಭಾರತೀಯ ವಿಶಿಷ್ಟ ಗುರುತು (ಆಧಾರ್)",
+      "issuer": "Unique Identification Authority of India (UIDAI)",
+      "issued_date": "2016-08-14",
+      "id_number": "XXXX-XXXX-4892",
+      "full_name": "Ramesh Naik",
+      "father_name": "Devappa Naik",
+      "dob": "1994-06-12",
+      "gender": "Male",
+      "permanent_address": "Plot No 45, Near Shanthi Nagar, Kalaburagi, Karnataka 585102",
+      "current_city": "Bengaluru",
+      "native_district": "Kalaburagi",
+      "state": "Karnataka",
+      "pincode": "585102"
+    },
+    "income_certificate": {
+      "doc_id": "doc_income_4019",
+      "doc_type": "income_certificate",
+      "doc_title_en": "Revenue Dept Income Certificate (RD)",
+      "doc_title_kn": "ಕಂದಾಯ ಇಲಾಖೆಯ ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ",
+      "issuer": "Tahsildar Office, Kalaburagi Taluk, Govt. of Karnataka",
+      "certificate_no": "RD00384920194",
+      "issued_date": "2024-04-15",
+      "valid_until": "2027-03-31",
+      "annual_income": 144000,
+      "annual_income_words": "One Lakh Forty Four Thousand Rupees Only",
+      "income_slab": "BPL (Below Poverty Line)",
+      "applicant_name": "Ramesh Naik",
+      "caste_category": "Cat-1 / Rural Artisan/Labourer"
+    },
+    "labour_card": {
+      "doc_id": "doc_labour_9918",
+      "doc_type": "labour_card",
+      "doc_title_en": "Karnataka Building & Other Construction Workers Identity Card",
+      "doc_title_kn": "ಕರ್ನಾಟಕ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರ ಗುರುತಿನ ಚೀಟಿ (ಲೇಬರ್ ಕಾರ್ಡ್)",
+      "issuer": "Karnataka Building and Other Construction Workers Welfare Board",
+      "registration_no": "KA-BOCW-2022-847291",
+      "registration_date": "2022-04-10",
+      "renewed_till": "2027-04-09",
+      "worker_type": "Building & Construction Labourer",
+      "worker_name": "Ramesh Naik",
+      "status": "Active & Verified",
+      "current_site_location": "Electronic City Phase 1, Bengaluru"
+    },
+    "address_proof": {
+      "doc_id": "doc_address_1284",
+      "doc_type": "address_proof",
+      "doc_title_en": "Local Residence & Worker Colony Certificate",
+      "doc_title_kn": "ಸ್ಥಳೀಯ ವಾಸಸ್ಥಳ ದೃಢೀಕರಣ ಪತ್ರ",
+      "issuer": "BBMP Ward Health Inspector / Contractor Colony Affidavit",
+      "present_address": "Shed 12, Kudlu Gate Labour Settlement, Hosur Main Road, Bengaluru",
+      "ward": "Ward 190, Mangammanapalya",
+      "district": "Bengaluru Urban",
+      "pincode": "560068",
+      "residing_since": "2021-11-01"
+    },
+    "bank_account_details": {
+      "doc_id": "doc_bank_5510",
+      "doc_type": "bank_account_details",
+      "doc_title_en": "Bank Passbook / DBT Enabled Account",
+      "doc_title_kn": "ಬ್ಯಾಂಕ್ ಪಾಸ್‌ಬುಕ್ (ಡಿಬಿಟಿ ಲಿಂಕ್ ಆಗಿದೆ)",
+      "issuer": "State Bank of India",
+      "bank_name": "State Bank of India",
+      "branch": "Electronic City, Bengaluru",
+      "account_holder_name": "Ramesh Naik",
+      "account_number": "39482019482",
+      "ifsc": "SBIN0040523",
+      "dbt_linked": true
+    },
+    "child_school_id": {
+      "doc_id": "doc_school_7719",
+      "doc_type": "child_school_id",
+      "doc_title_en": "Govt School Student Enrollment & ID",
+      "doc_title_kn": "ಸರ್ಕಾರಿ ಶಾಲೆ ವಿದ್ಯಾರ್ಥಿ ದಾಖಲಾತಿ ಪತ್ರ",
+      "issuer": "Department of School Education and Literacy, Karnataka",
+      "student_name": "Kiran Ramesh Naik",
+      "father_name": "Ramesh Naik",
+      "school_name": "Government Higher Primary School, Singasandra, Bengaluru",
+      "grade": "Class 4 (Primary Section)",
+      "academic_year": "2025-2026",
+      "enrollment_number": "KA-EDU-SATS-918204",
+      "admission_status": "Regular Attending Student"
+    }
+  }
+}

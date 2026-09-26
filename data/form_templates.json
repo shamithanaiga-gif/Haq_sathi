@@ -1,0 +1,304 @@
+{
+  "templates": {
+    "ration_card": {
+      "scheme_id": "ration_card",
+      "form_title_en": "Application for Karnataka Priority Household (BPL) Ration Card",
+      "form_title_kn": "ಕರ್ನಾಟಕ ಆಹಾರ ಬಿಪಿಎಲ್ ಪಡಿತರ ಚೀಟಿ ಅರ್ಜಿ",
+      "fields": [
+        {
+          "field_id": "applicant_name",
+          "label_en": "Head of Household / Applicant Name",
+          "label_kn": "ಕುಟುಂಬದ ಮುಖ್ಯಸ್ಥರ ಹೆಸರು",
+          "source": "document:aadhaar_card",
+          "doc_field": "full_name",
+          "type": "text"
+        },
+        {
+          "field_id": "aadhaar_number",
+          "label_en": "Aadhaar Number",
+          "label_kn": "ಆಧಾರ್ ಸಂಖ್ಯೆ",
+          "source": "document:aadhaar_card",
+          "doc_field": "id_number",
+          "type": "text"
+        },
+        {
+          "field_id": "dob",
+          "label_en": "Date of Birth",
+          "label_kn": "ಜನ್ಮ ದಿನಾಂಕ",
+          "source": "document:aadhaar_card",
+          "doc_field": "dob",
+          "type": "date"
+        },
+        {
+          "field_id": "annual_income",
+          "label_en": "Certified Annual Income (₹)",
+          "label_kn": "ದೃಢೀಕರಿಸಿದ ವಾರ್ಷಿಕ ಆದಾಯ (₹)",
+          "source": "document:income_certificate",
+          "doc_field": "annual_income",
+          "type": "currency"
+        },
+        {
+          "field_id": "income_cert_no",
+          "label_en": "Income Certificate No (RD No.)",
+          "label_kn": "ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಸಂಖ್ಯೆ (RD ಸಂಖ್ಯೆ)",
+          "source": "document:income_certificate",
+          "doc_field": "certificate_no",
+          "type": "text"
+        },
+        {
+          "field_id": "present_address",
+          "label_en": "Present Residential Address (Bengaluru)",
+          "label_kn": "ಪ್ರಸ್ತುತ ವಾಸವಿರುವ ವಿಳಾಸ (ಬೆಂಗಳೂರು)",
+          "source": "document:address_proof",
+          "doc_field": "present_address",
+          "type": "text"
+        },
+        {
+          "field_id": "pincode",
+          "label_en": "Postal Pincode",
+          "label_kn": "ಅಂಚೆ ಪಿನ್‌ಕೋಡ್",
+          "source": "document:address_proof",
+          "doc_field": "pincode",
+          "type": "text"
+        },
+        {
+          "field_id": "native_district",
+          "label_en": "Native District",
+          "label_kn": "ಸ್ವಂತ ಜಿಲ್ಲೆ",
+          "source": "user_profile",
+          "profile_field": "native_district",
+          "type": "text"
+        },
+        {
+          "field_id": "family_size",
+          "label_en": "Total Family Members",
+          "label_kn": "ಒಟ್ಟು ಕುಟುಂಬದ ಸದಸ್ಯರು",
+          "source": "user_profile",
+          "profile_field": "family_size",
+          "type": "number"
+        },
+        {
+          "field_id": "occupation",
+          "label_en": "Primary Occupation",
+          "label_kn": "ಮುಖ್ಯ ಕಾಯಕ / ವೃತ್ತಿ",
+          "source": "user_profile",
+          "profile_field": "occupation_display",
+          "type": "text"
+        },
+        {
+          "field_id": "fair_price_shop",
+          "label_en": "Designated Fair Price Shop (FPS)",
+          "label_kn": "ನಿಗದಿಪಡಿಸಿದ ನ್ಯಾಯಬೆಲೆ ಪಡಿತರ ಅಂಗಡಿ",
+          "source": "user_input",
+          "default_value": "FPS #14, Kudlu Gate, Ward 190, Bengaluru Urban",
+          "type": "text"
+        }
+      ]
+    },
+    "health_cover": {
+      "scheme_id": "health_cover",
+      "form_title_en": "Ayushman Bharat - Arogya Karnataka (AB-ArK) Enrolment",
+      "form_title_kn": "ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಆರೋಗ್ಯ ಕರ್ನಾಟಕ ನೋಂದಣಿ ಅರ್ಜಿ",
+      "fields": [
+        {
+          "field_id": "beneficiary_name",
+          "label_en": "Primary Beneficiary Name",
+          "label_kn": "ಪ್ರಮುಖ ಫಲಾನುಭವಿಯ ಹೆಸರು",
+          "source": "document:aadhaar_card",
+          "doc_field": "full_name",
+          "type": "text"
+        },
+        {
+          "field_id": "aadhaar_number",
+          "label_en": "Aadhaar Number",
+          "label_kn": "ಆಧಾರ್ ಸಂಖ್ಯೆ",
+          "source": "document:aadhaar_card",
+          "doc_field": "id_number",
+          "type": "text"
+        },
+        {
+          "field_id": "income_cert_no",
+          "label_en": "Income Certificate No",
+          "label_kn": "ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಸಂಖ್ಯೆ",
+          "source": "document:income_certificate",
+          "doc_field": "certificate_no",
+          "type": "text"
+        },
+        {
+          "field_id": "benefit_category",
+          "label_en": "Benefit Category",
+          "label_kn": "ಸೌಲಭ್ಯ ವರ್ಗ",
+          "source": "document:income_certificate",
+          "doc_field": "income_slab",
+          "type": "text"
+        },
+        {
+          "field_id": "covered_members",
+          "label_en": "Number of Beneficiary Family Members",
+          "label_kn": "ವಿಮೆ ಒಳಗೊಳ್ಳುವ ಕುಟುಂಬದ ಸದಸ್ಯರ ಸಂಖ್ಯೆ",
+          "source": "user_profile",
+          "profile_field": "family_size",
+          "type": "number"
+        },
+        {
+          "field_id": "preferred_hospital",
+          "label_en": "Nearest Empanelled Government Hospital",
+          "label_kn": "ಹತ್ತಿರದ ಸರ್ಕಾರಿ ಸಾರ್ವಜನಿಕ ಆಸ್ಪತ್ರೆ",
+          "source": "user_input",
+          "default_value": "General Hospital Jayanagar / Community Health Centre Begur",
+          "type": "text"
+        }
+      ]
+    },
+    "child_scholarship": {
+      "scheme_id": "child_scholarship",
+      "form_title_en": "Karnataka BOCW Pre-Matric Educational Scholarship Form",
+      "form_title_kn": "ಕರ್ನಾಟಕ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರ ಮಕ್ಕಳ ಪ್ರಿ-ಮೆಟ್ರಿಕ್ ವಿದ್ಯಾರ್ಥಿವೇತನ ಅರ್ಜಿ",
+      "fields": [
+        {
+          "field_id": "parent_name",
+          "label_en": "Registered Worker Name (Parent)",
+          "label_kn": "ನೋಂದಾಯಿತ ಕಾರ್ಮಿಕರ ಹೆಸರು (ಪೋಷಕರು)",
+          "source": "document:aadhaar_card",
+          "doc_field": "full_name",
+          "type": "text"
+        },
+        {
+          "field_id": "labour_card_no",
+          "label_en": "BOCW Labour Card Registration No",
+          "label_kn": "ಕಾರ್ಮಿಕ ಮಂಡಳಿ ನೋಂದಣಿ ಸಂಖ್ಯೆ",
+          "source": "document:labour_card",
+          "doc_field": "registration_no",
+          "type": "text"
+        },
+        {
+          "field_id": "worker_trade",
+          "label_en": "Designated Construction Trade",
+          "label_kn": "ಕಟ್ಟಡ ಕೆಲಸದ ವಿವರ",
+          "source": "document:labour_card",
+          "doc_field": "worker_type",
+          "type": "text"
+        },
+        {
+          "field_id": "card_validity",
+          "label_en": "Labour Card Valid Till",
+          "label_kn": "ಕಾರ್ಮಿಕ ಕಾರ್ಡ್ ಮಾನ್ಯತೆ ಅವಧಿ",
+          "source": "document:labour_card",
+          "doc_field": "renewed_till",
+          "type": "text"
+        },
+        {
+          "field_id": "child_name",
+          "label_en": "Student / Child Name",
+          "label_kn": "ವಿದ್ಯಾರ್ಥಿ / ಮಗುವಿನ ಹೆಸರು",
+          "source": "document:child_school_id",
+          "doc_field": "student_name",
+          "type": "text"
+        },
+        {
+          "field_id": "school_name",
+          "label_en": "School Currently Enrolled In",
+          "label_kn": "ಮಗು ಓದುತ್ತಿರುವ ಶಾಲೆ",
+          "source": "document:child_school_id",
+          "doc_field": "school_name",
+          "type": "text"
+        },
+        {
+          "field_id": "grade",
+          "label_en": "Current Grade / Class",
+          "label_kn": "ಪ್ರಸ್ತುತ ತರಗತಿ",
+          "source": "document:child_school_id",
+          "doc_field": "grade",
+          "type": "text"
+        },
+        {
+          "field_id": "school_enrollment_id",
+          "label_en": "School SATS / Enrollment ID",
+          "label_kn": "ಶಾಲಾ ದಾಖಲಾತಿ / SATS ಸಂಖ್ಯೆ",
+          "source": "document:child_school_id",
+          "doc_field": "enrollment_number",
+          "type": "text"
+        },
+        {
+          "field_id": "bank_name",
+          "label_en": "Disbursement Bank Name",
+          "label_kn": "ಖಾತೆ ಹೊಂದಿರುವ ಬ್ಯಾಂಕ್ ಹೆಸರು",
+          "source": "document:bank_account_details",
+          "doc_field": "bank_name",
+          "type": "text"
+        },
+        {
+          "field_id": "bank_account",
+          "label_en": "Bank Account Number (DBT Linked)",
+          "label_kn": "ಬ್ಯಾಂಕ್ ಖಾತೆ ಸಂಖ್ಯೆ",
+          "source": "document:bank_account_details",
+          "doc_field": "account_number",
+          "type": "text"
+        },
+        {
+          "field_id": "ifsc_code",
+          "label_en": "Bank IFSC Code",
+          "label_kn": "ಬ್ಯಾಂಕ್ ಐಎಫ್‌ಎಸ್‌ಸಿ (IFSC) ಕೋಡ್",
+          "source": "document:bank_account_details",
+          "doc_field": "ifsc",
+          "type": "text"
+        }
+      ]
+    },
+    "pension": {
+      "scheme_id": "pension",
+      "form_title_en": "Application for Sandhya Suraksha Pension",
+      "form_title_kn": "ಸಂಧ್ಯಾ ಸುರಕ್ಷಾ ಹಿರಿಯ ನಾಗರಿಕರ ಪಿಂಚಣಿ ಅರ್ಜಿ",
+      "fields": [
+        {
+          "field_id": "applicant_name",
+          "label_en": "Applicant Full Name",
+          "label_kn": "ಅರ್ಜಿದಾರರ ಪೂರ್ಣ ಹೆಸರು",
+          "source": "document:aadhaar_card",
+          "doc_field": "full_name",
+          "type": "text"
+        },
+        {
+          "field_id": "aadhaar_number",
+          "label_en": "Aadhaar Card Number",
+          "label_kn": "ಆಧಾರ್ ಕಾರ್ಡ್ ಸಂಖ್ಯೆ",
+          "source": "document:aadhaar_card",
+          "doc_field": "id_number",
+          "type": "text"
+        },
+        {
+          "field_id": "dob",
+          "label_en": "Date of Birth (Minimum 65 yrs)",
+          "label_kn": "ಜನ್ಮ ದಿನಾಂಕ (ಕನಿಷ್ಠ 65 ವರ್ಷ)",
+          "source": "document:aadhaar_card",
+          "doc_field": "dob",
+          "type": "date"
+        },
+        {
+          "field_id": "annual_income",
+          "label_en": "Certified Annual Income",
+          "label_kn": "ಪ್ರಮಾಣೀಕರಿಸಿದ ವಾರ್ಷಿಕ ಆದಾಯ",
+          "source": "document:income_certificate",
+          "doc_field": "annual_income",
+          "type": "currency"
+        },
+        {
+          "field_id": "bank_account",
+          "label_en": "Pension Credit Bank Account",
+          "label_kn": "ಪಿಂಚಣಿ ಜಮೆಯಾಗುವ ಬ್ಯಾಂಕ್ ಖಾತೆ",
+          "source": "document:bank_account_details",
+          "doc_field": "account_number",
+          "type": "text"
+        },
+        {
+          "field_id": "ifsc_code",
+          "label_en": "IFSC Code",
+          "label_kn": "ಐಎಫ್‌ಎಸ್‌ಸಿ ಕೋಡ್",
+          "source": "document:bank_account_details",
+          "doc_field": "ifsc",
+          "type": "text"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "schemes": [
+    {
+      "id": "ration_card",
+      "name_en": "Karnataka Ahara BPL Ration Card (Priority Household)",
+      "name_kn": "ಕರ್ನಾಟಕ ಆಹಾರ ಬಿಪಿಎಲ್ ಪಡಿತರ ಚೀಟಿ (ಆದ್ಯತಾ ಕುಟುಂಬ)",
+      "department_en": "Food, Civil Supplies & Consumer Affairs Dept, Govt. of Karnataka",
+      "department_kn": "ಆಹಾರ ಮತ್ತು ನಾಗರಿಕ ಸರಬರಾಜು ಇಲಾಖೆ, ಕರ್ನಾಟಕ ಸರ್ಕಾರ",
+      "benefit_en": "Subsidized food grains (5kg rice/person free under Anna Bhagya), sugar, kerosene, and official BPL identity card.",
+      "benefit_kn": "ಅನ್ನಭಾಗ್ಯ ಯೋಜನೆಯಡಿ ಪ್ರತಿ ವ್ಯಕ್ತಿಗೆ ತಿಂಗಳಿಗೆ 5 ಕೆಜಿ ಉಚಿತ ಅಕ್ಕಿ ಮತ್ತು ರಿಯಾಯಿತಿ ದರದಲ್ಲಿ ಅಗತ್ಯ ಆಹಾರ ಧಾನ್ಯಗಳು.",
+      "required_fields": [
+        "annual_income",
+        "family_size",
+        "state_resident",
+        "occupation"
+      ],
+      "field_clarifications": {
+        "annual_income": {
+          "en": "Annual family income is the total money earned in one year by all working members together. For example, ₹12,000 per month equals ₹1,44,000 per year.",
+          "kn": "ವಾರ್ಷಿಕ ಆದಾಯ ಎಂದರೆ ನಿಮ್ಮ ಮನೆಯಲ್ಲಿ ದುಡಿಯುವವರೆಲ್ಲರೂ ಸೇರಿ ಒಂದು ವರ್ಷದಲ್ಲಿ ಗಳಿಸುವ ಒಟ್ಟು ಹಣ. ಉದಾಹರಣೆಗೆ ತಿಂಗಳಿಗೆ ₹12,000 ಆದರೆ ವರ್ಷಕ್ಕೆ ₹1,44,000 ಆಗುತ್ತದೆ.",
+          "hi": "वार्षिक आय का अर्थ है आपके पूरे परिवार द्वारा एक वर्ष में अर्जित कुल आय।"
+        },
+        "family_size": {
+          "en": "Family size is the number of people living in your household who share the same kitchen (including spouse and children).",
+          "kn": "ಕುಟುಂಬದ ಸದಸ್ಯರ ಸಂಖ್ಯೆ ಎಂದರೆ ನಿಮ್ಮ ಮನೆಯಲ್ಲಿ ಒಟ್ಟಿಗೆ ಊಟ ಮಾಡುವ ಎಲ್ಲ ಸದಸ್ಯರು (ಗಂಡ, ಹೆಂಡತಿ ಮತ್ತು ಮಕ್ಕಳು).",
+          "hi": "परिवार का आकार यानी आपके साथ रहने वाले सदस्यों की संख्या।"
+        },
+        "state_resident": {
+          "en": "State resident means whether you currently live and work in Karnataka.",
+          "kn": "ಕರ್ನಾಟಕ ನಿವಾಸಿ ಎಂದರೆ ನೀವು ಪ್ರಸ್ತುತ ಕರ್ನಾಟಕದಲ್ಲಿ ವಾಸಿಸುತ್ತಿದ್ದೀರಾ ಮತ್ತು ಕೆಲಸ ಮಾಡುತ್ತಿದ್ದೀರಾ ಎಂದು.",
+          "hi": "क्या आप वर्तमान में कर्नाटक में रहते और काम करते हैं।"
+        },
+        "occupation": {
+          "en": "Your occupation is the daily wage work or trade you do, like construction work, carpentry, domestic work, or driving.",
+          "kn": "ಉದ್ಯೋಗ ಎಂದರೆ ನಿಮ್ಮ ದೈನಂದಿನ ಕಾಯಕ, ಉದಾಹರಣೆಗೆ ಕಟ್ಟಡ ಕೆಲಸ, ಬಡಗಿ ಕೆಲಸ, ಮನೆ ಕೆಲಸ ಅಥವಾ ಚಾಲನೆ.",
+          "hi": "आपका व्यवसाय यानी दैनिक मजदूरी या काम।"
+        }
+      },
+      "eligibility_rules": {
+        "annual_income_max": 144000,
+        "state_resident": true
+      },
+      "required_documents": [
+        "aadhaar_card",
+        "income_certificate",
+        "address_proof"
+      ],
+      "document_purposes": {
+        "aadhaar_card": {
+          "en": "To verify your identity and biometric entitlement without paperwork.",
+          "kn": "ನಿಮ್ಮ ಗುರುತು ಮತ್ತು ವಿಳಾಸವನ್ನು ಪರಿಶೀಲಿಸಲು ಆಧಾರ್ ಕಾರ್ಡ್ ಅಗತ್ಯವಿದೆ.",
+          "hi": "आपकी पहचान और बायोमेट्रिक पात्रता सत्यापित करने के लिए आधार कार्ड आवश्यक है।"
+        },
+        "income_certificate": {
+          "en": "To confirm that your family income is under ₹1.44 Lakh for BPL status.",
+          "kn": "ನಿಮ್ಮ ಕುಟುಂಬದ ವಾರ್ಷಿಕ ಆದಾಯ ಬಿಪಿಎಲ್ ಮಿತಿಯಲ್ಲಿದೆ ಎಂದು ದೃಢೀಕರಿಸಲು ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಅಗತ್ಯ.",
+          "hi": "परिवार की वार्षिक आय बीपीएल सीमा में है, यह प्रमाणित करने के लिए आय प्रमाण पत्र आवश्यक है।"
+        },
+        "address_proof": {
+          "en": "To assign your ration allocation to your local fair price shop in Bengaluru.",
+          "kn": "ಬೆಂಗಳೂರಿನಲ್ಲಿ ನಿಮ್ಮ ಹತ್ತಿರದ ನ್ಯಾಯಬೆಲೆ ಅಂಗಡಿಯನ್ನು ನಿಗದಿಪಡಿಸಲು ವಿಳಾಸದ ಪುರಾವೆ ಅಗತ್ಯ.",
+          "hi": "निकटतम राशन दुकान आवंटित करने के लिए पते का प्रमाण आवश्यक है।"
+        }
+      },
+      "explanation_text": {
+        "eligible": {
+          "en": "Great news! You qualify for the Karnataka BPL Ration Card. Your monthly family income of ₹12,000 (₹1,44,000/year) is within the eligible threshold, and you reside in Karnataka.",
+          "kn": "ಶುಭ ಸುದ್ದಿ! ನಿಮ್ಮ ಮಾಸಿಕ ಆದಾಯ ₹12,000 (ವಾರ್ಷಿಕ ₹1,44,000) ನಿಯಮದ ಮಿತಿಯಲ್ಲಿದ್ದು, ನೀವು ಕರ್ನಾಟಕದಲ್ಲಿ ವಾಸಿಸುತ್ತಿರುವುದರಿಂದ ನೀವು ಬಿಪಿಎಲ್ ಪಡಿತರ ಚೀಟಿಗೆ ಅರ್ಹರಾಗಿದ್ದೀರಿ.",
+          "hi": "शुभ समाचार! आपकी मासिक आय ₹12,000 (वार्षिक ₹1,44,000) सीमा के भीतर है और आप कर्नाटक में रहते हैं, इसलिए आप बीपीएल राशन कार्ड के लिए पात्र हैं।"
+        },
+        "not_eligible": {
+          "en": "You do not currently qualify for the BPL Ration Card because your family income exceeds the maximum threshold of ₹1,44,000 per year or Karnataka residency is unverified.",
+          "kn": "ನಿಮ್ಮ ವಾರ್ಷಿಕ ಕುಟುಂಬ ಆದಾಯ ₹1,44,000 ಮಿತಿಗಿಂತ ಹೆಚ್ಚಾಗಿರುವುದರಿಂದ ಅಥವಾ ಕರ್ನಾಟಕ ನಿವಾಸಿ ಪುರಾವೆ ಇಲ್ಲದಿರುವುದರಿಂದ ನೀವು ಬಿಪಿಎಲ್ ಪಡಿತರ ಚೀಟಿಗೆ ಅರ್ಹರಾಗಿಲ್ಲ.",
+          "hi": "आप बीपीएल राशन कार्ड के लिए पात्र नहीं हैं क्योंकि आपकी वार्षिक आय ₹1,44,000 से अधिक है या कर्नाटक निवास सत्यापित नहीं है।"
+        }
+      },
+      "name_hi": "कर्नाटक अहारा बीपीएल राशन कार्ड (प्राथमिकता गृहस्थी)",
+      "department_hi": "खाद्य, नागरिक आपूर्ति एवं उपभोक्ता मामले विभाग, कर्नाटक सरकार",
+      "benefit_hi": "अन्न भाग्य योजना के तहत प्रति व्यक्ति 5 किलोग्राम मुफ्त चावल और रियायती खाद्यान्न।"
+    },
+    {
+      "id": "health_cover",
+      "name_en": "Ayushman Bharat - Arogya Karnataka (AB-ArK)",
+      "name_kn": "ಆಯುಷ್ಮಾನ್ ಭಾರತ್ - ಆರೋಗ್ಯ ಕರ್ನಾಟಕ",
+      "department_en": "Health and Family Welfare Department, Govt. of Karnataka",
+      "department_kn": "ಆರೋಗ್ಯ ಮತ್ತು ಕುಟುಂಬ ಕಲ್ಯಾಣ ಇಲಾಖೆ, ಕರ್ನಾಟಕ ಸರ್ಕಾರ",
+      "benefit_en": "Free cash-less secondary and tertiary healthcare up to ₹5,00,000 per family per year in empanelled government and private hospitals.",
+      "benefit_kn": "ಸರ್ಕಾರಿ ಮತ್ತು ನೋಂದಾಯಿತ ಖಾಸಗಿ ಆಸ್ಪತ್ರೆಗಳಲ್ಲಿ ವರ್ಷಕ್ಕೆ ₹5,00,000 ದವರೆಗೆ ಸಂಪೂರ್ಣ ಉಚಿತ ಚಿಕಿತ್ಸೆ ಮತ್ತು ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ.",
+      "required_fields": [
+        "annual_income",
+        "family_size",
+        "state_resident"
+      ],
+      "field_clarifications": {
+        "annual_income": {
+          "en": "Family annual income determines if you receive 100% free treatment or 30% co-payment under Arogya Karnataka.",
+          "kn": "ನಿಮ್ಮ ಕುಟುಂಬದ ವಾರ್ಷಿಕ ಆದಾಯವು ನಿಮಗೆ ಸಂಪೂರ್ಣ ಉಚಿತ ಚಿಕಿತ್ಸೆ ಸಿಗುತ್ತದೆಯೇ ಎಂದು ನಿರ್ಧರಿಸುತ್ತದೆ.",
+          "hi": "पारिवारिक वार्षिक आय यह तय करती है कि आपको 100% मुफ्त इलाज मिलेगा या नहीं।"
+        },
+        "family_size": {
+          "en": "All registered members of your family will get individual health cards under this ₹5 Lakh cover.",
+          "kn": "ನಿಮ್ಮ ಕುಟುಂಬದ ಪ್ರತಿಯೊಬ್ಬ ಸದಸ್ಯರಿಗೂ ಈ ₹5 ಲಕ್ಷ ಆರೋಗ್ಯ ವಿಮೆಯ ಕಾರ್ಡ್ ಸಿಗುತ್ತದೆ.",
+          "hi": "परिवार के सभी सदस्यों को इस ₹5 लाख के कवर के तहत स्वास्थ्य कार्ड मिलेगा।"
+        },
+        "state_resident": {
+          "en": "Valid for anyone residing within Karnataka holding a valid identity card.",
+          "kn": "ಕರ್ನಾಟಕದಲ್ಲಿ ವಾಸಿಸುವ ಎಲ್ಲ ಅರ್ಹ ನಾಗರಿಕರಿಗೆ ಈ ಸೌಲಭ್ಯ ಲಭ್ಯವಿದೆ.",
+          "hi": "यह कर्नाटक में रहने वाले नागरिकों के लिए मान्य है।"
+        }
+      },
+      "eligibility_rules": {
+        "annual_income_max": 180000,
+        "state_resident": true
+      },
+      "required_documents": [
+        "aadhaar_card",
+        "income_certificate"
+      ],
+      "document_purposes": {
+        "aadhaar_card": {
+          "en": "To generate unique ABHA Health IDs for all members of your family.",
+          "kn": "ಕುಟುಂಬದ ಪ್ರತಿಯೊಬ್ಬರಿಗೂ ಆಭಾ (ABHA) ಆರೋಗ್ಯ ಗುರುತಿನ ಚೀಟಿ ರಚಿಸಲು ಆಧಾರ್ ಅಗತ್ಯ.",
+          "hi": "परिवार के प्रत्येक सदस्य का आभा (ABHA) स्वास्थ्य आईडी बनाने के लिए आधार आवश्यक है।"
+        },
+        "income_certificate": {
+          "en": "To place you in Category A (100% free cashless treatment up to ₹5 Lakh).",
+          "kn": "ವರ್ಗ 'ಎ' ಅಡಿಯಲ್ಲಿ ₹5 ಲಕ್ಷದವರೆಗೆ 100% ಉಚಿತ ಚಿಕಿತ್ಸೆ ಪಡೆಯಲು ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಅಗತ್ಯ.",
+          "hi": "₹5 लाख तक 100% मुफ्त कैशलेस उपचार पात्रता सत्यापित करने के लिए आय प्रमाण पत्र।"
+        }
+      },
+      "explanation_text": {
+        "eligible": {
+          "en": "You are eligible for 100% free healthcare coverage up to ₹5 Lakh per year for your family of 4 under Ayushman Bharat - Arogya Karnataka.",
+          "kn": "ನಿಮ್ಮ 4 ಜನರ ಕುಟುಂಬಕ್ಕೆ ವರ್ಷಕ್ಕೆ ₹5 ಲಕ್ಷದವರೆಗೆ 100% ಉಚಿತ ಆಸ್ಪತ್ರೆ ಚಿಕಿತ್ಸೆ ಪಡೆಯಲು ನೀವು ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಆರೋಗ್ಯ ಕರ್ನಾಟಕ ಯೋಜನೆಯಡಿ ಅರ್ಹರಾಗಿದ್ದೀರಿ.",
+          "hi": "बधाई हो! आप आयुष्मान भारत - आरोग्य कर्नाटक के तहत अपने 4 सदस्यों के परिवार के लिए ₹5 लाख प्रति वर्ष तक के मुफ्त इलाज के पात्र हैं।"
+        },
+        "not_eligible": {
+          "en": "You do not qualify for the 100% free category under Arogya Karnataka because your reported family annual income exceeds ₹1,80,000.",
+          "kn": "ನಿಮ್ಮ ಕುಟುಂಬದ ವಾರ್ಷಿಕ ಆದಾಯ ₹1,80,000 ಗಿಂತ ಹೆಚ್ಚಿರುವುದರಿಂದ ನೀವು ಸಂಪೂರ್ಣ ಉಚಿತ ಚಿಕಿತ್ಸಾ ವರ್ಗಕ್ಕೆ ಅರ್ಹರಾಗಿಲ್ಲ.",
+          "hi": "आप आरोग्य कर्नाटक के 100% मुफ्त इलाज के लिए पात्र नहीं हैं क्योंकि आपकी वार्षिक पारिवारिक आय ₹1,80,000 से अधिक है।"
+        }
+      },
+      "name_hi": "आयुष्मान भारत - आरोग्य कर्नाटक (AB-ArK)",
+      "department_hi": "स्वास्थ्य एवं परिवार कल्याण विभाग, कर्नाटक सरकार",
+      "benefit_hi": "सरकारी और संबद्ध निजी अस्पतालों में प्रति परिवार प्रति वर्ष ₹5,00,000 तक का मुफ्त कैशलेस इलाज।"
+    },
+    {
+      "id": "child_scholarship",
+      "name_en": "Karnataka BOCW Pre-Matric Construction Worker Child Scholarship",
+      "name_kn": "ಕಟ್ಟಡ ಕಾರ್ಮಿಕರ ಮಕ್ಕಳ ಪ್ರಿ-ಮೆಟ್ರಿಕ್ ವಿದ್ಯಾರ್ಥಿವೇತನ (BOCW)",
+      "department_en": "Karnataka Building & Other Construction Workers Welfare Board",
+      "department_kn": "ಕರ್ನಾಟಕ ಕಟ್ಟಡ ಮತ್ತು ಇತರ ನಿರ್ಮಾಣ ಕಾರ್ಮಿಕರ ಕಲ್ಯಾಣ ಮಂಡಳಿ",
+      "benefit_en": "Direct cash transfer of ₹3,000 to ₹5,000 per school year directly to the parent's bank account for books, uniform, and school fees.",
+      "benefit_kn": "ಶಾಲಾ ಶುಲ್ಕ, ಪುಸ್ತಕ ಮತ್ತು ಸಮವಸ್ತ್ರಕ್ಕಾಗಿ ಪ್ರತಿ ವರ್ಷ ₹3,000 ದಿಂದ ₹5,000 ನೇರವಾಗಿ ಬ್ಯಾಂಕ್ ಖಾತೆಗೆ ಜಮೆಯಾಗುತ್ತದೆ.",
+      "required_fields": [
+        "occupation",
+        "has_labour_card",
+        "has_school_going_child"
+      ],
+      "field_clarifications": {
+        "occupation": {
+          "en": "You must be working in construction, masonry, painting, plumbing, bar-bending, or related building activities.",
+          "kn": "ನೀವು ಕಟ್ಟಡ ನಿರ್ಮಾಣ, ಗಾರೆ ಕೆಲಸ, ಪೇಂಟಿಂಗ್, ಪ್ಲಂಬಿಂಗ್ ಅಥವಾ ಇತರೆ ಕಟ್ಟಡ ಕಾಮಗಾರಿಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುತ್ತಿರಬೇಕು.",
+          "hi": "आपको निर्माण, चिनाई, बढ़ईगीरी या संबंधित भवन निर्माण कार्य में कार्यरत होना चाहिए।"
+        },
+        "has_labour_card": {
+          "en": "A green Labour Registration Card issued by the Karnataka Building Workers Welfare Board.",
+          "kn": "ಕರ್ನಾಟಕ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರ ಕಲ್ಯಾಣ ಮಂಡಳಿಯು ನೀಡಿರುವ ಹಸಿರು ಬಣ್ಣದ ಕಾರ್ಮಿಕ ಕಾರ್ಡ್.",
+          "hi": "कर्नाटक भवन कर्मकार कल्याण बोर्ड द्वारा जारी हरा लेबर कार्ड।"
+        },
+        "has_school_going_child": {
+          "en": "Whether you have a son or daughter currently studying in Class 1 through Class 10.",
+          "kn": "ನಿಮ್ಮ ಮಗ ಅಥವಾ ಮಗಳು 1 ನೇ ತರಗತಿಯಿಂದ 10 ನೇ ತರಗತಿಯವರೆಗೆ ಶಾಲೆಯಲ್ಲಿ ಓದುತ್ತಿದ್ದಾರೆಯೇ ಎಂದು.",
+          "hi": "क्या आपका बेटा या बेटी कक्षा 1 से 10 तक स्कूल में पढ़ रहा है।"
+        }
+      },
+      "eligibility_rules": {
+        "occupation": "construction_worker",
+        "has_labour_card": true,
+        "has_school_going_child": true
+      },
+      "required_documents": [
+        "labour_card",
+        "child_school_id",
+        "bank_account_details",
+        "aadhaar_card"
+      ],
+      "document_purposes": {
+        "labour_card": {
+          "en": "To verify that you are an active registered building and construction worker with the state board.",
+          "kn": "ನೀವು ನೋಂದಾಯಿತ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರೆಂದು ಸಾಬೀತುಪಡಿಸಲು ನಿಮ್ಮ ಕಾರ್ಮಿಕ ಕಾರ್ಡ್ ಅಗತ್ಯವಿದೆ.",
+          "hi": "यह प्रमाणित करने के लिए कि आप पंजीकृत निर्माण श्रमिक हैं।"
+        },
+        "child_school_id": {
+          "en": "To verify that your child is enrolled in school (Class 4) for academic year 2025-2026.",
+          "kn": "ನಿಮ್ಮ ಮಗು ಶಾಲೆಯಲ್ಲಿ (4 ನೇ ತರಗತಿ) ಓದುತ್ತಿರುವುದನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಲು ಶಾಲಾ ಗುರುತಿನ ಚೀಟಿ ಅಗತ್ಯ.",
+          "hi": "यह सत्यापित करने के लिए कि आपका बच्चा स्कूल में नामांकित है।"
+        },
+        "bank_account_details": {
+          "en": "To disburse the scholarship grant directly into your bank account through DBT (Direct Benefit Transfer).",
+          "kn": "ವಿದ್ಯಾರ್ಥಿವೇತನದ ಹಣ ನೇರವಾಗಿ ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಗೆ ಜಮೆಯಾಗಲು ಬ್ಯಾಂಕ್ ವಿವರಗಳು ಬೇಕು.",
+          "hi": "छात्रवृत्ति सीधे डीबीटी के माध्यम से बैंक खाते में भेजने के लिए।"
+        },
+        "aadhaar_card": {
+          "en": "To link your Aadhaar with the Aadhaar Payment Bridge for direct benefit disbursement.",
+          "kn": "ನೇರ ನಗದು ವರ್ಗಾವಣೆಗಾಗಿ ಆಧಾರ್ ಸಂಖ್ಯೆ ಅಗತ್ಯ.",
+          "hi": "आधार से जुड़े बैंक खाते में सीधा लाभ अंतरण के लिए आधार कार्ड।"
+        }
+      },
+      "explanation_text": {
+        "eligible": {
+          "en": "Congratulations! As a registered construction worker with a school-going child, you are eligible for an annual educational grant of ₹3,000 - ₹5,000 directly deposited to your bank account.",
+          "kn": "ಅಭಿನಂದನೆಗಳು! ನೀವು ನೋಂದಾಯಿತ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರಾಗಿದ್ದು, ಶಾಲೆಯಲ್ಲಿ ಓದುತ್ತಿರುವ ಮಗು ಇರುವುದರಿಂದ ವಾರ್ಷಿಕ ₹3,000 ರಿಂದ ₹5,000 ವಿದ್ಯಾರ್ಥಿವೇತನ ನೇರವಾಗಿ ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಗೆ ಬರಲು ಅರ್ಹರಾಗಿದ್ದೀರಿ.",
+          "hi": "बधाई हो! एक पंजीकृत निर्माण श्रमिक के रूप में, आपके स्कूली बच्चे के लिए ₹3,000 से ₹5,000 की वार्षिक छात्रवृत्ति सीधे आपके बैंक खाते में जमा होने के लिए आप पात्र हैं।"
+        },
+        "not_eligible": {
+          "en": "You do not qualify for this scholarship because it is exclusively for registered construction workers with an active Labour Card and a child studying in school.",
+          "kn": "ನೀವು ಈ ವಿದ್ಯಾರ್ಥಿವೇತನಕ್ಕೆ ಅರ್ಹರಾಗಿಲ್ಲ. ಇದು ಕೇವಲ ನೋಂದಾಯಿತ ಕಾರ್ಮಿಕ ಕಾರ್ಡ್ ಹೊಂದಿದ್ದು ಶಾಲೆಗೆ ಹೋಗುವ ಮಕ್ಕಳಿರುವ ಕಟ್ಟಡ ಕಾರ್ಮಿಕರಿಗೆ ಮಾತ್ರ ಲಭ್ಯವಿದೆ.",
+          "hi": "आप इस छात्रवृत्ति के पात्र नहीं हैं क्योंकि यह केवल पंजीकृत निर्माण श्रमिकों के लिए है जिनके पास सक्रिय लेबर कार्ड और स्कूल जाने वाला बच्चा है।"
+        }
+      },
+      "name_hi": "कर्नाटक बीओसीडब्ल्यू निर्माण श्रमिक बाल शिक्षा छात्रवृत्ति",
+      "department_hi": "कर्नाटक भवन एवं अन्य सन्निर्माण कर्मकार कल्याण बोर्ड",
+      "benefit_hi": "स्कूल की किताबों, वर्दी और फीस के लिए प्रति वर्ष ₹3,000 से ₹5,000 की नकद सहायता सीधे बैंक खाते में।"
+    },
+    {
+      "id": "pension",
+      "name_en": "Sandhya Suraksha Senior Citizen Social Security Pension",
+      "name_kn": "ಸಂಧ್ಯಾ ಸುರಕ್ಷಾ ಹಿರಿಯ ನಾಗರಿಕರ ಸಾಮಾಜಿಕ ಭದ್ರತಾ ಪಿಂಚಣಿ",
+      "department_en": "Revenue Department, Govt. of Karnataka",
+      "department_kn": "ಕಂದಾಯ ಇಲಾಖೆ, ಕರ್ನಾಟಕ ಸರ್ಕಾರ",
+      "benefit_en": "Monthly pension of ₹1,200 deposited directly into the senior citizen's bank or post office account, plus subsidized public transport passes.",
+      "benefit_kn": "ಹಿರಿಯ ನಾಗರಿಕರಿಗೆ ಪ್ರತಿ ತಿಂಗಳು ₹1,200 ನೇರ ಮಾಸಿಕ ಪಿಂಚಣಿ ಮತ್ತು ಉಚಿತ/ರಿಯಾಯಿತಿ ಬಸ್ ಪಾಸ್ ಸೌಲಭ್ಯ.",
+      "required_fields": [
+        "age",
+        "annual_income",
+        "state_resident"
+      ],
+      "field_clarifications": {
+        "age": {
+          "en": "Age of the applicant must be 65 completed years or older at the date of application.",
+          "kn": "ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ದಿನಕ್ಕೆ ಅರ್ಜಿದಾರರ ವಯಸ್ಸು 65 ವರ್ಷ ಅಥವಾ ಅದಕ್ಕಿಂತ ಹೆಚ್ಚಾಗಿರಬೇಕು.",
+          "hi": "आवेदन की तिथि पर आवेदक की आयु 65 पूर्ण वर्ष या उससे अधिक होनी चाहिए।"
+        },
+        "annual_income": {
+          "en": "Combined annual income of the elderly applicant and spouse cannot exceed ₹20,000 per year.",
+          "kn": "ಅರ್ಜಿದಾರರು ಮತ್ತು ಅವರ ಪತಿ/ಪತ್ನಿಯ ಒಟ್ಟು ವಾರ್ಷಿಕ ಆದಾಯ ₹20,000 ಮೀರಬಾರದು.",
+          "hi": "बुजुर्ग आवेदक और जीवनसाथी की कुल वार्षिक आय ₹20,000 से अधिक नहीं होनी चाहिए।"
+        },
+        "state_resident": {
+          "en": "Must have lived in Karnataka for at least 3 continuous years.",
+          "kn": "ಕನಿಷ್ಠ 3 ವರ್ಷಗಳಿಂದ ಕರ್ನಾಟಕದಲ್ಲಿ ವಾಸಿಸುತ್ತಿರಬೇಕು.",
+          "hi": "कम से कम 3 निरंतर वर्षों से कर्नाटक में निवास होना चाहिए।"
+        }
+      },
+      "eligibility_rules": {
+        "min_age": 65,
+        "annual_income_max": 20000,
+        "state_resident": true
+      },
+      "required_documents": [
+        "aadhaar_card",
+        "income_certificate",
+        "bank_account_details"
+      ],
+      "document_purposes": {
+        "aadhaar_card": {
+          "en": "To verify official date of birth and age requirement of 65+ years.",
+          "kn": "ನಿಮ್ಮ ಅಧಿಕೃತ ಜನ್ಮ ದಿನಾಂಕ ಮತ್ತು 65 ವರ್ಷ ವಯಸ್ಸಾಗಿದೆ ಎಂದು ದೃಢೀಕರಿಸಲು ಆಧಾರ್ ಕಾರ್ಡ್ ಅಗತ್ಯ.",
+          "hi": "65+ वर्ष की आधिकारिक जन्म तिथि और आयु सत्यापित करने के लिए।"
+        },
+        "income_certificate": {
+          "en": "To certify that your personal annual income is below ₹20,000.",
+          "kn": "ನಿಮ್ಮ ವೈಯಕ್ತಿಕ ವಾರ್ಷಿಕ ಆದಾಯ ₹20,000 ಗಿಂತ ಕಡಿಮೆ ಎಂದು ದೃಢೀಕರಿಸಲು ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಅಗತ್ಯ.",
+          "hi": "यह प्रमाणित करने के लिए कि आपकी व्यक्तिगत वार्षिक आय ₹20,000 से कम है।"
+        },
+        "bank_account_details": {
+          "en": "To receive your monthly pension of ₹1,200 via direct bank transfer.",
+          "kn": "ಪ್ರತಿ ತಿಂಗಳ ₹1,200 ಪಿಂಚಣಿ ಹಣ ನೇರವಾಗಿ ನಿಮ್ಮ ಖಾತೆಗೆ ಜಮೆಯಾಗಲು ಬ್ಯಾಂಕ್ ಖಾತೆ ವಿವರ ಅಗತ್ಯ.",
+          "hi": "हर महीने ₹1,200 की पेंशन सीधे आपके खाते में जमा होने के लिए।"
+        }
+      },
+      "explanation_text": {
+        "eligible": {
+          "en": "You qualify for the Sandhya Suraksha Pension of ₹1,200 per month as you are 65 or older and your income is within limits.",
+          "kn": "ನಿಮಗೆ 65 ವರ್ಷ ಅಥವಾ ಮೇಲ್ಪಟ್ಟಿದ್ದು ವಾರ್ಷಿಕ ಆದಾಯ ಮಿತಿಯೊಳಗಿರುವುದರಿಂದ ತಿಂಗಳಿಗೆ ₹1,200 ಸಂಧ್ಯಾ ಸುರಕ್ಷಾ ಪಿಂಚಣಿ ಪಡೆಯಲು ನೀವು ಅರ್ಹರಾಗಿದ್ದೀರಿ.",
+          "hi": "आप ₹1,200 प्रति माह संध्या सुरक्षा पेंशन के पात्र हैं क्योंकि आपकी आयु 65 वर्ष या उससे अधिक है और आय सीमा के भीतर है।"
+        },
+        "not_eligible": {
+          "en": "You do not qualify for Sandhya Suraksha Pension. The minimum age required is 65 years, whereas your current reported age is 32 years.",
+          "kn": "ನೀವು ಸಂಧ್ಯಾ ಸುರಕ್ಷಾ ಪಿಂಚಣಿಗೆ ಅರ್ಹರಾಗಿಲ್ಲ. ಈ ಸೌಲಭ್ಯಕ್ಕೆ ಕನಿಷ್ಠ 65 ವರ್ಷ ವಯಸ್ಸಾಗಿರಬೇಕು, ಆದರೆ ನಿಮ್ಮ ಪ್ರಸ್ತುತ ವಯಸ್ಸು 32 ವರ್ಷ.",
+          "hi": "आप संध्या सुरक्षा पेंशन के पात्र नहीं हैं। आवश्यक न्यूनतम आयु 65 वर्ष है।"
+        }
+      },
+      "name_hi": "संध्या सुरक्षा वरिष्ठ नागरिक सामाजिक सुरक्षा पेंशन",
+      "department_hi": "राजस्व विभाग, कर्नाटक सरकार",
+      "benefit_hi": "वरिष्ठ नागरिकों को ₹1,200 प्रतिमाह प्रत्यक्ष मासिक पेंशन और रियायती बस पास सुविधा।"
+    }
+  ]
+}

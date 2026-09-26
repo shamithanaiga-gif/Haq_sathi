@@ -1,0 +1,121 @@
+# .gitignore
+# ---- OS / IDE / Editor ----------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux / generic temp files
+*~
+
+# VS Code / editor caches
+.vscode/
+.history/
+
+# JetBrains IDEs (IntelliJ, PyCharm, WebStorm)
+.idea/
+*.iml
+
+# ---- Python ---------------------------------------------------------------
+# Byte‑compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Build / distribution artefacts
+build/
+**/dist/
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+env.bak/
+.Python
+
+# pytest / coverage caches
+.pytest_cache/
+cover/
+
+# MyPy cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Poetry / Pipenv (ignore virtualenv folders only)
+.poetry/
+.pipenv/
+
+# ---- JavaScript / Node ---------------------------------------------------
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build output / static assets
+.dist/
+public/build/
+static/
+
+# npm / yarn cache files
+.npm/
+.eslintcache
+
+# Vite / Webpack / Parcel caches
+.vite/
+.rollup.cache/
+.webpack/
+.parcel-cache/
+
+# ----- Front‑end specific -------------------------------------------------
+.pnp*
+.pnp.js
+.cache
+.parcel-cache
+
+# ----- Environment / Secrets ----------------------------------------------
+# dotenv files – keep only the example in VCS
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Google / Firebase / AWS config files (if ever added)
+.google-services.json
+aws-exports.js
+
+# ----- Logs ---------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+debug.log
+*.log
+
+# ----- Misc ---------------------------------------------------------------
+*.sublime-workspace
+*.sublime-project
+*.swp
+*~
+
+# ----- Test & Runtime Profiles --------------------------------------------
+test_edge_debug/
+latest_request.txt
+data/active_sessions.json
+data/audit_log.json
+data/users_db.json
+data/user_profile.json
