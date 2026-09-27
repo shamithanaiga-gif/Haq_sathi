@@ -57,6 +57,8 @@ data/active_sessions.json
 data/audit_log.json
 data/users_db.json
 data/live_schemes_cache.json
+*.db
+data/*.db
 .bin/
 .certs/
 certbot/

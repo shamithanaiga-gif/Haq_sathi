@@ -210,6 +210,38 @@ function HaqSaathiApp() {
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
+  // Application reconciliation helper: merges server applications with persistent local cache
+  const reconcileUserApplications = (incomingApps = [], phone = null) => {
+    const userPhone = phone || (currentUser ? currentUser.phone : localStorage.getItem('haq_phone'));
+    const localKey = userPhone ? `haq_apps_${userPhone}` : 'haq_apps';
+    let cachedApps = [];
+    try {
+      cachedApps = JSON.parse(localStorage.getItem(localKey) || '[]');
+    } catch (e) {}
+
+    const mergedMap = new Map();
+    // 1. Server-persisted applications take high priority
+    (incomingApps || []).forEach(a => {
+      const k = a.reference_id || a.app_id;
+      if (k) mergedMap.set(k, a);
+    });
+    // 2. Client cached applications merged (ensuring zero loss during async propagation)
+    cachedApps.forEach(a => {
+      const k = a.reference_id || a.app_id;
+      if (k && !mergedMap.has(k)) {
+        mergedMap.set(k, a);
+      }
+    });
+
+    const mergedList = Array.from(mergedMap.values());
+    if (mergedList.length > 0) {
+      try {
+        localStorage.setItem(localKey, JSON.stringify(mergedList));
+      } catch (e) {}
+    }
+    return mergedList;
+  };
+
   // Load user data and scan schemes (FIX 1 & 2: Speaks specific named schemes)
   const loadDashboardData = async (phone, token = null, speakSummary = true) => {
     setIsLoading(true);
@@ -222,7 +254,8 @@ function HaqSaathiApp() {
         localStorage.setItem('haq_user', JSON.stringify(res.user));
         if (token) localStorage.setItem('haq_token', token);
         setScanResults(res.scan_results);
-        setUserApplications(res.applications || []);
+        const reconciled = reconcileUserApplications(res.applications || (res.user && res.user.applications) || [], res.user.phone);
+        setUserApplications(reconciled);
         setVaultDocs(res.vault_permissions || {});
         setUserAuditLogs(res.audit_logs || []);
         setCurrentScreen('dashboard');
@@ -246,6 +279,12 @@ function HaqSaathiApp() {
       }
     } catch (e) {
       console.warn('Dashboard load fallback:', e);
+      if (phone) {
+        const cached = reconcileUserApplications([], phone);
+        if (cached && cached.length > 0) {
+          setUserApplications(cached);
+        }
+      }
       if (!currentUser && !phone) {
         setCurrentScreen('login');
       }
@@ -1489,7 +1528,12 @@ function HaqSaathiApp() {
         setSubmittedApp(enrichedApp);
         setFlowStep('submitted');
         
-        // Refresh dashboard data
+        // Immediately update state and per-user cache
+        const activePhone = currentUser ? currentUser.phone : '9876543210';
+        const updated = reconcileUserApplications([enrichedApp], activePhone);
+        setUserApplications(updated);
+
+        // Refresh dashboard data from server
         if (currentUser) {
           await loadDashboardData(currentUser.phone, sessionToken, false);
         }
@@ -2762,9 +2806,9 @@ function HaqSaathiApp() {
                   if (currentUser && currentUser.phone) {
                     const token = localStorage.getItem('haq_token');
                     const freshData = await api.getDashboard(currentUser.phone, token, lang);
-                    if (freshData && freshData.applications) {
-                      setUserApplications(freshData.applications);
-                    }
+                    const incoming = (freshData && (freshData.applications || (freshData.user && freshData.user.applications))) || [];
+                    const reconciled = reconcileUserApplications(incoming, currentUser.phone);
+                    setUserApplications(reconciled);
                   }
                 }}
               >
@@ -3170,9 +3214,9 @@ function HaqSaathiApp() {
                       onClick={async () => {
                         const token = localStorage.getItem('haq_token');
                         const freshData = await api.getDashboard(currentUser.phone, token, lang);
-                        if (freshData && freshData.applications) {
-                          setUserApplications(freshData.applications);
-                        }
+                        const incoming = (freshData && (freshData.applications || (freshData.user && freshData.user.applications))) || [];
+                        const reconciled = reconcileUserApplications(incoming, currentUser.phone);
+                        setUserApplications(reconciled);
                       }}
                       style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                     >
@@ -4000,9 +4044,9 @@ function HaqSaathiApp() {
                 if (currentUser && currentUser.phone) {
                   const token = localStorage.getItem('haq_token');
                   const freshData = await api.getDashboard(currentUser.phone, token, lang);
-                  if (freshData && freshData.applications) {
-                    setUserApplications(freshData.applications);
-                  }
+                  const incoming = (freshData && (freshData.applications || (freshData.user && freshData.user.applications))) || [];
+                  const reconciled = reconcileUserApplications(incoming, currentUser.phone);
+                  setUserApplications(reconciled);
                 }
               }}
               onTouchEnd={async () => {
@@ -4012,9 +4056,9 @@ function HaqSaathiApp() {
                 if (currentUser && currentUser.phone) {
                   const token = localStorage.getItem('haq_token');
                   const freshData = await api.getDashboard(currentUser.phone, token, lang);
-                  if (freshData && freshData.applications) {
-                    setUserApplications(freshData.applications);
-                  }
+                  const incoming = (freshData && (freshData.applications || (freshData.user && freshData.user.applications))) || [];
+                  const reconciled = reconcileUserApplications(incoming, currentUser.phone);
+                  setUserApplications(reconciled);
                 }
               }}
             >

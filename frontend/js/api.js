@@ -1,6 +1,6 @@
 // Haq Saathi - Full Backend API Client
-// Priority: window.HAQ_SAATHI_API_BASE (e.g. Fly.io) -> window.location.origin (same-origin / Vercel rewrite)
-const API_BASE = (typeof window !== 'undefined' && window.HAQ_SAATHI_API_BASE) ? window.HAQ_SAATHI_API_BASE : window.location.origin;
+// Priority: window.HAQ_SAATHI_API_BASE -> '' (relative same-origin for universal deployment)
+const API_BASE = (typeof window !== 'undefined' && window.HAQ_SAATHI_API_BASE) ? window.HAQ_SAATHI_API_BASE : '';
 
 
 const api = {

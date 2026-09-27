@@ -85,6 +85,13 @@ def get_all_vault_documents() -> Dict[str, Any]:
 
 def get_audit_logs(user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Returns audit logs. If user_id is provided, strictly filters to that user only."""
+    try:
+        from backend.database import db_get_audit_logs
+        db_logs = db_get_audit_logs(user_id=user_id)
+        if db_logs:
+            return db_logs
+    except Exception as e:
+        print(f"[VaultService] DB audit read note: {e}")
     logs = load_json(AUDIT_FILE, [])
     if user_id:
         return [entry for entry in logs if entry.get("user_id") == user_id]
@@ -108,7 +115,6 @@ def log_consent_action(
     applicant_type: str = "self",
     dependent_name: Optional[str] = None
 ) -> Dict[str, Any]:
-    logs = get_audit_logs()
     entry = {
         "id": f"audit_{uuid.uuid4().hex[:8]}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -129,8 +135,20 @@ def log_consent_action(
         "status": status,
         "revoked_at": None
     }
-    logs.insert(0, entry)  # latest first
-    save_json(AUDIT_FILE, logs)
+    # 1. Save to persistent SQLite
+    try:
+        from backend.database import db_save_audit_log
+        db_save_audit_log(entry)
+    except Exception as e:
+        print(f"[VaultService] DB audit write note: {e}")
+
+    # 2. Sync to JSON store
+    try:
+        logs = load_json(AUDIT_FILE, [])
+        logs.insert(0, entry)
+        save_json(AUDIT_FILE, logs)
+    except Exception:
+        pass
     return entry
 
 
@@ -147,6 +165,11 @@ def revoke_consent(audit_id: str, user_id: Optional[str] = None) -> Optional[Dic
             target = item
             break
     if target:
+        try:
+            from backend.database import db_save_audit_log
+            db_save_audit_log(target)
+        except Exception:
+            pass
         save_json(AUDIT_FILE, logs)
     return target
 

@@ -8,6 +8,9 @@ import json
 import time
 import re
 import uuid
+import hmac
+import hashlib
+import base64
 from typing import Dict, Any, List, Optional, Tuple
 
 from backend.vault_service import BASE_DIR, DATA_DIR
@@ -23,6 +26,25 @@ MAX_OTP_ATTEMPTS = 5
 SESSIONS_FILE = os.path.join(DATA_DIR, "active_sessions.json")
 ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "haq_saathi_sovereign_vault_session_key_2026")
+
+
+def create_session_token(phone: str) -> str:
+    """Creates an HMAC-signed stateless session token that survives serverless restarts."""
+    payload = json.dumps({"phone": phone, "t": int(time.time())}, separators=(',', ':'))
+    b64_payload = base64.urlsafe_b64encode(payload.encode()).decode().rstrip('=')
+    sig = hmac.new(SESSION_SECRET.encode(), b64_payload.encode(), hashlib.sha256).hexdigest()[:24]
+    token = f"hs_{b64_payload}_{sig}"
+    ACTIVE_SESSIONS[token] = {
+        "phone": phone,
+        "created_at": time.time()
+    }
+    try:
+        save_sessions(ACTIVE_SESSIONS)
+    except Exception:
+        pass
+    return token
+
 
 def load_sessions() -> Dict[str, Dict[str, Any]]:
     if not os.path.exists(SESSIONS_FILE):
@@ -35,27 +57,55 @@ def load_sessions() -> Dict[str, Dict[str, Any]]:
 
 
 def save_sessions(sessions: Dict[str, Dict[str, Any]]) -> None:
-    os.makedirs(os.path.dirname(SESSIONS_FILE), exist_ok=True)
-    with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
-        json.dump(sessions, f, indent=2, ensure_ascii=False)
+    try:
+        os.makedirs(os.path.dirname(SESSIONS_FILE), exist_ok=True)
+        with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(sessions, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
 
 
 def load_users_db() -> Dict[str, Any]:
+    try:
+        from backend.database import db_get_all_users
+        db_users = db_get_all_users()
+        if db_users:
+            return db_users
+    except Exception as e:
+        print(f"[user_store] Error loading from SQLite: {e}")
+
     if not os.path.exists(USERS_DB_FILE):
         seed_users = init_seed_users()
         save_users_db(seed_users)
         return seed_users
     try:
         with open(USERS_DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            try:
+                from backend.database import db_save_user
+                for p, u in data.items():
+                    db_save_user(p, u)
+            except Exception:
+                pass
+            return data
     except Exception:
         return init_seed_users()
 
 
 def save_users_db(data: Dict[str, Any]) -> None:
-    os.makedirs(os.path.dirname(USERS_DB_FILE), exist_ok=True)
-    with open(USERS_DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    try:
+        from backend.database import db_save_user
+        for phone, user in data.items():
+            db_save_user(phone, user)
+    except Exception as e:
+        print(f"[user_store] Error saving to SQLite: {e}")
+
+    try:
+        os.makedirs(os.path.dirname(USERS_DB_FILE), exist_ok=True)
+        with open(USERS_DB_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
 
 
 def mask_aadhaar(aadhaar: str) -> str:
@@ -325,12 +375,7 @@ def verify_demo_otp(phone: str, entered_otp: str) -> Dict[str, Any]:
             "message": "Phone number verified. Please complete 1-time registration."
         }
 
-    token = f"tok_{uuid.uuid4().hex}"
-    ACTIVE_SESSIONS[token] = {
-        "phone": phone_clean,
-        "created_at": now
-    }
-    save_sessions(ACTIVE_SESSIONS)
+    token = create_session_token(phone_clean)
     user["last_login"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))
     save_users_db(db)
 
@@ -344,7 +389,29 @@ def verify_demo_otp(phone: str, entered_otp: str) -> Dict[str, Any]:
 
 
 def verify_session_token(token: str) -> Optional[str]:
-    """Returns phone number if session is valid, else None."""
+    """Returns phone number if session is valid, else None. Supports stateless HMAC and stateful tokens."""
+    if not token or not isinstance(token, str):
+        return None
+
+    # 1. Stateless HMAC verification (resilient across server restarts and serverless instances)
+    if token.startswith("hs_"):
+        try:
+            parts = token.split("_")
+            if len(parts) == 3:
+                _, b64_payload, sig = parts
+                expected_sig = hmac.new(SESSION_SECRET.encode(), b64_payload.encode(), hashlib.sha256).hexdigest()[:24]
+                if hmac.compare_digest(sig, expected_sig):
+                    rem = len(b64_payload) % 4
+                    padded = b64_payload + ('=' * (4 - rem) if rem else '')
+                    payload_data = json.loads(base64.urlsafe_b64decode(padded.encode()).decode())
+                    phone = payload_data.get("phone")
+                    created_t = payload_data.get("t", 0)
+                    if time.time() - created_t < 2592000:  # 30 days
+                        return phone
+        except Exception:
+            pass
+
+    # 2. Check in-memory and disk session store
     session = ACTIVE_SESSIONS.get(token)
     if not session:
         sessions = load_sessions()
@@ -465,12 +532,7 @@ def register_user(payload: Dict[str, Any]) -> Dict[str, Any]:
     save_users_db(db)
 
     # Issue session token
-    token = f"tok_{uuid.uuid4().hex}"
-    ACTIVE_SESSIONS[token] = {
-        "phone": phone_clean,
-        "created_at": time.time()
-    }
-    save_sessions(ACTIVE_SESSIONS)
+    token = create_session_token(phone_clean)
 
     return {
         "success": True,
@@ -537,58 +599,86 @@ def normalize_application(app: Dict[str, Any]) -> Dict[str, Any]:
 
 def add_user_application(phone: str, app_data: Dict[str, Any]) -> Dict[str, Any]:
     phone_clean = clean_phone(phone)
-    db = load_users_db()
-    user = db.get(phone_clean)
-    if not user:
-        return {"success": False, "message": "User not found"}
-
-    if "applications" not in user:
-        user["applications"] = []
-
     normalize_application(app_data)
 
-    # Idempotency check: Do not generate a new Reference ID if the page is refreshed or user opens the application again
-    scheme_id = app_data.get("scheme_id")
-    applicant_type = app_data.get("applicant_type", "self")
-    applicant_name = app_data.get("applicant_name", "Self")
-    
-    for idx, existing in enumerate(user["applications"]):
-        normalize_application(existing)
-        if (existing.get("reference_id") == app_data.get("reference_id") or
-            existing.get("app_id") == app_data.get("app_id") or
-            (scheme_id and existing.get("scheme_id") == scheme_id and
-             existing.get("applicant_type", "self") == applicant_type and
-             (applicant_type != "family_member" or existing.get("applicant_name") == applicant_name))):
-            app_data["reference_id"] = existing.get("reference_id") or app_data["reference_id"]
-            app_data["app_id"] = existing.get("app_id") or app_data["app_id"]
-            app_data["submitted_at"] = existing.get("submitted_at") or app_data["submitted_at"]
-            app_data["status"] = existing.get("status") or "Applied"
-            user["applications"][idx] = app_data
-            save_users_db(db)
-            return {"success": True, "application": app_data, "reused": True}
+    # 1. Direct persistent SQLite save
+    db_res = None
+    try:
+        from backend.database import db_save_application
+        db_res = db_save_application(phone_clean, app_data)
+        if db_res and db_res.get("application"):
+            app_data = db_res["application"]
+    except Exception as e:
+        print(f"[user_store] db_save_application error: {e}")
 
-    user["applications"].insert(0, app_data)
-    save_users_db(db)
-    return {"success": True, "application": app_data, "reused": False}
+    # 2. Dual-sync with in-memory / JSON store
+    db = load_users_db()
+    user = db.get(phone_clean)
+    if user:
+        if "applications" not in user:
+            user["applications"] = []
+
+        scheme_id = app_data.get("scheme_id")
+        applicant_type = app_data.get("applicant_type", "self")
+        applicant_name = app_data.get("applicant_name", "Self")
+        
+        found = False
+        for idx, existing in enumerate(user["applications"]):
+            normalize_application(existing)
+            if (existing.get("reference_id") == app_data.get("reference_id") or
+                existing.get("app_id") == app_data.get("app_id") or
+                (scheme_id and existing.get("scheme_id") == scheme_id and
+                 existing.get("applicant_type", "self") == applicant_type and
+                 (applicant_type != "family_member" or existing.get("applicant_name") == applicant_name))):
+                user["applications"][idx] = app_data
+                found = True
+                break
+        if not found:
+            user["applications"].insert(0, app_data)
+
+        try:
+            os.makedirs(os.path.dirname(USERS_DB_FILE), exist_ok=True)
+            with open(USERS_DB_FILE, "w", encoding="utf-8") as f:
+                json.dump(db, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+    reused = db_res.get("reused", False) if db_res else False
+    return {"success": True, "application": app_data, "reused": reused}
 
 
 def update_user_application_status(phone: str, ref_or_app_id: str, new_status: str, notes: Optional[str] = None) -> Optional[Dict[str, Any]]:
     phone_clean = clean_phone(phone)
+    updated_app = None
+
+    # 1. Update in SQLite database
+    try:
+        from backend.database import db_update_application_status
+        updated_app = db_update_application_status(phone_clean, ref_or_app_id, new_status, notes)
+    except Exception as e:
+        print(f"[user_store] db_update_application_status error: {e}")
+
+    # 2. Dual-sync in JSON
     db = load_users_db()
     user = db.get(phone_clean)
-    if not user or "applications" not in user:
-        return None
-
-    for app in user["applications"]:
-        normalize_application(app)
-        if app.get("reference_id") == ref_or_app_id or app.get("app_id") == ref_or_app_id:
-            app["status"] = new_status
-            if notes:
-                app["status_notes"] = notes
-            app["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            save_users_db(db)
-            return app
-    return None
+    if user and "applications" in user:
+        for app in user["applications"]:
+            normalize_application(app)
+            if app.get("reference_id") == ref_or_app_id or app.get("app_id") == ref_or_app_id:
+                app["status"] = new_status
+                if notes:
+                    app["status_notes"] = notes
+                app["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                try:
+                    os.makedirs(os.path.dirname(USERS_DB_FILE), exist_ok=True)
+                    with open(USERS_DB_FILE, "w", encoding="utf-8") as f:
+                        json.dump(db, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                if not updated_app:
+                    updated_app = app
+                break
+    return updated_app
 
 
 def toggle_vault_permission(phone: str, doc_type: str, new_status: str) -> Dict[str, Any]:

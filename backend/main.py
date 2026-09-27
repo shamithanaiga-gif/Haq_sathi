@@ -334,8 +334,31 @@ def api_get_dashboard(
     # User-scoped audit logs (Section 9: never return raw global audit logs)
     user_audit = get_audit_logs(user_id=phone_clean)
 
-    raw_apps = user.get("applications", [])
-    normalized_apps = [normalize_application(a) for a in raw_apps]
+    # Reconcile applications from both user dict and persistent SQLite table
+    try:
+        from backend.database import db_get_user_applications
+        sqlite_apps = db_get_user_applications(phone_clean)
+    except Exception:
+        sqlite_apps = []
+
+    merged_apps = {}
+    for a in (user.get("applications") or []):
+        normalize_application(a)
+        key = a.get("reference_id") or a.get("app_id")
+        if key:
+            merged_apps[key] = a
+
+    for a in sqlite_apps:
+        normalize_application(a)
+        key = a.get("reference_id") or a.get("app_id")
+        if key:
+            if key not in merged_apps:
+                merged_apps[key] = a
+            else:
+                # Merge details and preserve status
+                merged_apps[key].update({k: v for k, v in a.items() if v is not None})
+
+    normalized_apps = list(merged_apps.values())
     user["applications"] = normalized_apps
 
     return {
@@ -764,7 +787,7 @@ def api_submit_form(req: FormSubmitRequest):
         existing["status"] = "Submitted (Prototype)"
         if req.form_data:
             existing["details"] = req.form_data
-        save_users_db(db)
+        add_user_application(phone_clean, existing)
         app_record = existing
     else:
         ref_hex = uuid.uuid4().hex[:8].upper()
@@ -782,6 +805,28 @@ def api_submit_form(req: FormSubmitRequest):
             "details": req.form_data
         }
         add_user_application(phone_clean, app_record)
+
+    # Sovereign Consent & Audit Log: Record official application submission
+    try:
+        log_consent_action(
+            doc_type="application_submission",
+            doc_title_en=f"Application Submission ({ref_id})",
+            doc_title_kn=f"ಅರ್ಜಿ ಸಲ್ಲಿಕೆ ({ref_id})",
+            doc_title_hi=f"आवेदन जमा ({ref_id})",
+            scheme_id=req.scheme_id,
+            scheme_name_en=scheme.get("name_en", req.scheme_id),
+            scheme_name_kn=scheme.get("name_kn", req.scheme_id),
+            scheme_name_hi=scheme.get("name_hi", req.scheme_id),
+            purpose_en=f"Official submission for {scheme.get('name_en', req.scheme_id)} with Reference ID {ref_id}.",
+            purpose_kn=f"{scheme.get('name_kn', req.scheme_id)} ಗಾಗಿ ಅಧಿಕೃತ ಅರ್ಜಿ ಸಲ್ಲಿಕೆ (ರೆಫರೆನ್ಸ್ ಐಡಿ {ref_id}).",
+            purpose_hi=f"{scheme.get('name_hi', req.scheme_id)} के लिए आधिकारिक आवेदन प्रस्तुत (संदर्भ आईडी {ref_id})।",
+            status="SUBMITTED",
+            user_id=phone_clean,
+            applicant_type=req.applicant_type or "self",
+            dependent_name=req.applicant_name if req.applicant_type == "family_member" else None
+        )
+    except Exception as audit_err:
+        print(f"[api_submit_form] Audit log error: {audit_err}")
     
     ack_en = f"Application {ref_id} for {scheme['name_en']} submitted successfully! Reference ID: {ref_id}. Status: Submitted (Prototype)."
     ack_kn = f"{scheme['name_kn']} ಗಾಗಿ ನಿಮ್ಮ ಅರ್ಜಿ {ref_id} ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಕೆಯಾಗಿದೆ! ರೆಫರೆನ್ಸ್ ಐಡಿ: {ref_id}. ಸ್ಥಿತಿ: Submitted (Prototype)."

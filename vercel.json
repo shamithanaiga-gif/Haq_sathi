@@ -70,16 +70,16 @@
   ],
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://haq-saathi-backend.fly.dev/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
       "source": "/docs",
-      "destination": "https://haq-saathi-backend.fly.dev/docs"
+      "destination": "/api/index.py"
     },
     {
       "source": "/openapi.json",
-      "destination": "https://haq-saathi-backend.fly.dev/openapi.json"
+      "destination": "/api/index.py"
     }
   ]
 }
