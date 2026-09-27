@@ -531,8 +531,8 @@ def normalize_application(app: Dict[str, Any]) -> Dict[str, Any]:
     if not app.get("reference_id"):
         app_id_clean = re.sub(r'[^A-Za-z0-9]', '', str(app.get("app_id", "REF00000000")))
         app["reference_id"] = f"REF-{app_id_clean[-8:].upper()}"
-    if not app.get("status") or app.get("status") == "Submitted (Prototype)":
-        app["status"] = "Applied"
+    if not app.get("status"):
+        app["status"] = "Submitted (Prototype)"
     return app
 
 

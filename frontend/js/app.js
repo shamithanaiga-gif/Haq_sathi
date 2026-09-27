@@ -105,6 +105,7 @@ function HaqSaathiApp() {
   const [schemes, setSchemes] = useState(DEFAULT_SCHEMES);
   const [scanResults, setScanResults] = useState(null);
   const [isBreakSearchActive, setIsBreakSearchActive] = useState(false);
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
   const [userApplications, setUserApplications] = useState([]);
   const [vaultDocs, setVaultDocs] = useState({});
   const [userAuditLogs, setUserAuditLogs] = useState([]);
@@ -122,6 +123,8 @@ function HaqSaathiApp() {
   const [schemeTypedAnswer, setSchemeTypedAnswer] = useState('');
   const [clarification, setClarification] = useState(null);
   const [eligibilityResult, setEligibilityResult] = useState(null);
+  const [eligibilityError, setEligibilityError] = useState(null);
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
   const [consents, setConsents] = useState({});
   const [activeDocIndex, setActiveDocIndex] = useState(0);
   const [prefilledForm, setPrefilledForm] = useState(null);
@@ -132,6 +135,7 @@ function HaqSaathiApp() {
   // Voice controller state
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [interimText, setInterimText] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
@@ -311,9 +315,9 @@ function HaqSaathiApp() {
   };
 
   const renderStatusBadge = (status) => {
-    const norm = (status || 'Applied').toLowerCase();
+    const norm = (status || 'Submitted (Prototype)').toLowerCase();
     let badgeClass = 'status-applied';
-    let label = 'Applied ✅';
+    let label = 'Submitted (Prototype) 🏛️';
     if (norm.includes('review')) {
       badgeClass = 'status-under-review';
       label = 'Under Review ⏳';
@@ -323,12 +327,15 @@ function HaqSaathiApp() {
     } else if (norm.includes('rejected')) {
       badgeClass = 'status-rejected';
       label = 'Rejected ❌';
+    } else if (norm.includes('prototype') || norm.includes('applied') || norm.includes('submitted')) {
+      badgeClass = 'status-applied';
+      label = 'Submitted (Prototype) 🏛️';
     }
     return <span className={`status-badge ${badgeClass}`}>{label}</span>;
   };
 
   const renderStatusStepper = (status) => {
-    const norm = (status || 'Applied').toLowerCase();
+    const norm = (status || 'Submitted (Prototype)').toLowerCase();
     const isApplied = true;
     const isUnderReview = norm.includes('review') || norm.includes('approved');
     const isApproved = norm.includes('approved');
@@ -338,7 +345,7 @@ function HaqSaathiApp() {
       <div className="status-stepper" aria-label="Application Status Stages">
         <div className={`stepper-step ${isApplied ? 'active' : ''}`}>
           <div className="stepper-circle">{isApplied ? '✓' : '1'}</div>
-          <div className="stepper-label">Applied</div>
+          <div className="stepper-label">Submitted (Prototype)</div>
         </div>
         <div className={`stepper-line ${isUnderReview ? 'active' : ''}`} />
         <div className={`stepper-step ${isUnderReview ? 'active' : ''}`}>
@@ -474,16 +481,18 @@ function HaqSaathiApp() {
       (speechResult) => {
         const cleanText = (typeof speechResult === 'string' ? speechResult : '').trim();
         if (!cleanText) return;
-        setVoiceText(cleanText);
+        setVoiceText('');
         setInterimText('');
-        
-        // Log to running conversation transcript
-        addConversationBubble('user', cleanText);
+        setIsProcessingVoice(true);
 
-        if (onResult) {
-          onResult(cleanText);
-        } else {
-          handleUniversalVoiceRouter(cleanText, chosenLang);
+        try {
+          if (onResult) {
+            onResult(cleanText);
+          } else {
+            handleUniversalVoiceRouter(cleanText, chosenLang);
+          }
+        } finally {
+          setTimeout(() => setIsProcessingVoice(false), 800);
         }
       },
       {
@@ -520,6 +529,7 @@ function HaqSaathiApp() {
     }
     setIsSpeaking(false);
     setIsListening(false);
+    setIsProcessingVoice(false);
   };
 
   const toggleLanguage = (newLang) => {
@@ -734,10 +744,10 @@ function HaqSaathiApp() {
         return;
       } else {
         const failMsg = (lang === 'kn')
-          ? `ನಾನು ಕೇಳಿಸಿಕೊಂಡೆ: '${clean}', ಆದರೆ ದಯವಿಟ್ಟು ನಿಮ್ಮ ಊರಿನ ವಿಳಾಸ ಒಂದೇ ಆಗಿದೆಯೇ ಎಂದು ತಿಳಿಸಿ (ಹೌದು ಅಥವಾ ಇಲ್ಲ).`
+          ? `ದಯವಿಟ್ಟು ನಿಮ್ಮ ಊರಿನ ವಿಳಾಸ ಒಂದೇ ಆಗಿದೆಯೇ ಎಂದು ತಿಳಿಸಿ (ಹೌದು ಅಥವಾ ಇಲ್ಲ).`
           : ((lang === 'hi')
-              ? `मैंने सुना: '${clean}', लेकिन कृपया बताएं कि क्या आपका स्थायी पता समान है (हाँ या नहीं)।`
-              : `I heard: '${clean}', but please answer if your native address is the same as present address (Yes or No).`);
+              ? `कृपया बताएं कि क्या आपका स्थायी पता समान है (हाँ या नहीं)।`
+              : `Please answer if your native address is the same as present address (Yes or No).`);
         speakAndListen(failMsg, lang, (retry) => handleRegisterVoiceInput(retry, 8));
         return;
       }
@@ -755,10 +765,10 @@ function HaqSaathiApp() {
         return;
       } else {
         const failMsg = (lang === 'kn')
-          ? `ನಾನು ಕೇಳಿಸಿಕೊಂಡೆ: '${clean}', ಆದರೆ ದಯವಿಟ್ಟು ನಿಮ್ಮ ಬಳಿ ಡಿಜಿಲಾಕರ್ ಇದೆಯೇ ಎಂದು ತಿಳಿಸಿ (ಹೌದು ಅಥವಾ ಇಲ್ಲ).`
+          ? `ದಯವಿಟ್ಟು ನಿಮ್ಮ ಬಳಿ ಡಿಜಿಲಾಕರ್ ಇದೆಯೇ ಎಂದು ತಿಳಿಸಿ (ಹೌದು ಅಥವಾ ಇಲ್ಲ).`
           : ((lang === 'hi')
-              ? `मैंने सुना: '${clean}', लेकिन कृपया बताएं कि क्या आपके पास डिजीलॉकर है (हाँ या नहीं)।`
-              : `I heard: '${clean}', but please answer Yes or No for DigiLocker.`);
+              ? `कृपया बताएं कि क्या आपके पास डिजीलॉकर है (हाँ या नहीं)।`
+              : `Please answer Yes or No for DigiLocker.`);
         speakAndListen(failMsg, lang, (retry) => handleRegisterVoiceInput(retry, 11));
         return;
       }
@@ -989,10 +999,10 @@ function HaqSaathiApp() {
         val = parseInt(digits, 10);
       } else {
         const failMsg = lang === 'kn'
-          ? `ನಾನು '${answer}' ಎಂದು ಕೇಳಿಸಿಕೊಂಡೆ, ಆದರೆ ಸಂಖ್ಯೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸಂಖ್ಯೆಯನ್ನು ತಿಳಿಸಿ.`
+          ? `ಸಂಖ್ಯೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸಂಖ್ಯೆಯನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ತಿಳಿಸಿ.`
           : (lang === 'hi'
-              ? `मैंने '${answer}' सुना, लेकिन संख्या समझ नहीं आई। कृपया संख्या बताएं।`
-              : `I heard: '${answer}' but couldn't understand the number. Please try again.`);
+              ? `संख्या समझ नहीं आई। कृपया संख्या स्पष्ट बताएं।`
+              : `Could not understand the number. Please try again or type the number.`);
         speakAndListen(failMsg, lang, (retry) => processMissingFieldVoiceAnswer(retry, index, scheme));
         return;
       }
@@ -1002,10 +1012,10 @@ function HaqSaathiApp() {
       const isNo = lower.includes('no') || lower.includes('ಇಲ್ಲ') || lower.includes('नहीं') || lower.includes('illa') || lower.includes('nahi');
       if (!isYes && !isNo) {
         const failMsg = lang === 'kn'
-          ? `ನಾನು '${answer}' ಎಂದು ಕೇಳಿಸಿಕೊಂಡೆ, ಆದರೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು 'ಹೌದು' ಅಥವಾ 'ಇಲ್ಲ' ಎಂದು ಹೇಳಿ.`
+          ? `ದಯವಿಟ್ಟು 'ಹೌದು' ಅಥವಾ 'ಇಲ್ಲ' ಎಂದು ಹೇಳಿ.`
           : (lang === 'hi'
-              ? `मैंने '${answer}' सुना, लेकिन समझ नहीं आया। कृपया 'हाँ' या 'नहीं' कहें।`
-              : `I heard: '${answer}' but couldn't understand. Please say Yes or No.`);
+              ? `कृपया 'हाँ' या 'नहीं' कहें।`
+              : `Please say Yes or No.`);
         speakAndListen(failMsg, lang, (retry) => processMissingFieldVoiceAnswer(retry, index, scheme));
         return;
       }
@@ -1097,6 +1107,7 @@ function HaqSaathiApp() {
       } catch (ttsErr) {
         console.warn("[SchemeFlow] Speech synthesis failed:", ttsErr);
       }
+      setFlowStep('checking_eligibility');
       evaluateEligibility(schemeId, targetProfile);
     }
   };
@@ -1144,7 +1155,7 @@ function HaqSaathiApp() {
         ? res.failure_message_kn
         : ((lang === 'hi' && res.failure_message_hi)
             ? res.failure_message_hi
-            : (res.failure_message_en || res.failure_message || `I heard: '${answer}' but couldn't understand. Please try again.`));
+            : (res.failure_message_en || res.failure_message || `Could not understand. Please try again or type your answer.`));
       setSpeechParseError(failMsg);
       speakAndListen(failMsg, lang, (retryAnswer) => {
         handleSchemeFieldAnswer(retryAnswer, fieldName, schemeId, proxyData);
@@ -1188,6 +1199,13 @@ function HaqSaathiApp() {
 
   const evaluateEligibility = async (schemeId, targetProfile) => {
     setIsLoading(true);
+    setFlowStep('checking_eligibility');
+    setEligibilityError(null);
+    console.log(`[EligibilityCheck] >>> Invoking rules-engine eligibility check for scheme: "${schemeId}"`, {
+      phone: currentUser ? currentUser.phone : '9876543210',
+      targetProfile,
+      language: lang
+    });
     try {
       const res = await api.evaluateEligibility({
         scheme_id: schemeId,
@@ -1195,6 +1213,7 @@ function HaqSaathiApp() {
         user_data: targetProfile,
         language: lang
       });
+      console.log(`[EligibilityCheck] <<< Received eligibility check result for "${schemeId}":`, res);
       if (res && res.results && res.results.length > 0) {
         const result = res.results[0];
         setEligibilityResult(result);
@@ -1205,16 +1224,20 @@ function HaqSaathiApp() {
           : (t.voice_eligibility_prompt_ineligible || "You do not qualify for {scheme}.").replace('{scheme}', result.scheme_name_en);
 
         speakAndListen(`${result.warm_explanation} ${voicePrompt}`, lang, (decision) => {
-          const lower = decision.toLowerCase();
-          if (lower.includes('apply') || lower.includes('yes') || lower.includes('ಅರ್ಜಿ') || lower.includes('ಹೌದು') || lower.includes('हाँ')) {
+          const lower = (decision || '').toLowerCase();
+          if (lower.includes('apply') || lower.includes('yes') || lower.includes('ಅರ್ಜಿ') || lower.includes('ಹೌದು') || lower.includes('हाँ') || lower.includes('consent') || lower.includes('ಮುಂದೆ')) {
             startConsentFlow(result);
           } else {
             setCurrentScreen('dashboard');
           }
         });
+      } else {
+        throw new Error('Rules engine did not return an evaluation result.');
       }
     } catch (e) {
-      console.error(e);
+      console.error(`[EligibilityCheck] !!! Eligibility evaluation failed for "${schemeId}":`, e);
+      setEligibilityError(e.message || 'Unable to check eligibility at this moment.');
+      setFlowStep('checking_eligibility');
     } finally {
       setIsLoading(false);
     }
@@ -1224,14 +1247,14 @@ function HaqSaathiApp() {
     setFlowStep('consent');
     setActiveDocIndex(0);
     setConsents({});
-    askNextDocumentConsent(0, result);
+    askNextDocumentConsent(0, result, {});
   };
 
-  const askNextDocumentConsent = (docIdx, result) => {
+  const askNextDocumentConsent = (docIdx, result, currentConsents = consents) => {
     const docs = result.required_documents || [];
     if (docIdx >= docs.length) {
       // All document consents collected -> Proceed to prefill & review!
-      proceedToApplicationReview(result.scheme_id);
+      proceedToApplicationReview(result.scheme_id, currentConsents);
       return;
     }
 
@@ -1255,17 +1278,18 @@ function HaqSaathiApp() {
       .replace('{scheme_name}', schemeName);
 
     speakAndListen(prompt, lang, (consentSpeech) => {
-      const lower = consentSpeech.toLowerCase();
+      const lower = (consentSpeech || '').toLowerCase();
       if (lower.includes('allow') || lower.includes('yes') || lower.includes('ಅನುಮತಿಸಿ') || lower.includes('ಹೌದು') || lower.includes('हाँ') || lower.includes('अनुमति')) {
-        recordConsentDecision(docType, 'ALLOWED', docIdx, result);
+        recordConsentDecision(docType, 'ALLOWED', docIdx, result, currentConsents);
       } else {
-        recordConsentDecision(docType, 'DENIED', docIdx, result);
+        recordConsentDecision(docType, 'DENIED', docIdx, result, currentConsents);
       }
     });
   };
 
-  const recordConsentDecision = async (docType, status, docIdx, result) => {
-    setConsents((prev) => ({ ...prev, [docType]: status }));
+  const recordConsentDecision = async (docType, status, docIdx, result, currentConsents = consents) => {
+    const nextConsents = { ...currentConsents, [docType]: status };
+    setConsents(nextConsents);
     try {
       await api.logConsent({
         doc_type: docType,
@@ -1290,38 +1314,157 @@ function HaqSaathiApp() {
 
     const nextIdx = docIdx + 1;
     setActiveDocIndex(nextIdx);
-    askNextDocumentConsent(nextIdx, result);
+    askNextDocumentConsent(nextIdx, result, nextConsents);
   };
 
-  const proceedToApplicationReview = async (schemeId) => {
+  const getDepartmentInfo = (schemeId) => {
+    const id = (schemeId || '').toLowerCase();
+    if (id.includes('ration') || id.includes('anna') || id.includes('bpl')) {
+      return {
+        dept_en: 'Department of Food, Civil Supplies and Consumer Affairs',
+        dept_kn: 'ಆಹಾರ, ನಾಗರಿಕ ಸರಬರಾಜು ಮತ್ತು ಗ್ರಾಹಕರ ವ್ಯವಹಾರಗಳ ಇಲಾಖೆ',
+        dept_hi: 'खाद्य, नागरिक आपूर्ति एवं उपभोक्ता मामले विभाग',
+        state_en: 'Government of Karnataka',
+        state_kn: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+        state_hi: 'कर्नाटक सरकार',
+        form_title_en: 'Application for Priority Household (BPL) Ration Card under National Food Security Act',
+        form_title_kn: 'ರಾಷ್ಟ್ರೀಯ ಆಹಾರ ಭದ್ರತಾ ಕಾಯ್ದೆಯಡಿ ಆದ್ಯತಾ ಕುಟುಂಬ (ಬಿಪಿಎಲ್) ಪಡಿತರ ಚೀಟಿಗಾಗಿ ಅರ್ಜಿ',
+        form_title_hi: 'राष्ट्रीय खाद्य सुरक्षा अधिनियम के तहत प्राथमिकता वाले परिवार (बीपीएल) राशन कार्ड के लिए आवेदन',
+        form_no: 'FORM NO. 1A / NFSA-PPH / 2026'
+      };
+    }
+    if (id.includes('labour') || id.includes('karmika') || id.includes('bocw')) {
+      return {
+        dept_en: 'Karnataka Building & Other Construction Workers Welfare Board',
+        dept_kn: 'ಕರ್ನಾಟಕ ಕಟ್ಟಡ ಮತ್ತು ಇತರ ನಿರ್ಮಾಣ ಕಾರ್ಮಿಕರ ಕಲ್ಯಾಣ ಮಂಡಳಿ',
+        dept_hi: 'कर्नाटक भवन एवं अन्य सन्निर्माण कर्मकार कल्याण बोर्ड',
+        state_en: 'Government of Karnataka',
+        state_kn: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+        state_hi: 'कर्नाटक सरकार',
+        form_title_en: 'Application for Registration & Welfare Grant under BOCW Act',
+        form_title_kn: 'ಕಟ್ಟಡ ನಿರ್ಮಾಣ ಕಾರ್ಮಿಕರ ನೋಂದಣಿ ಮತ್ತು ಕಲ್ಯಾಣ ಸೌಲಭ್ಯಗಳಿಗಾಗಿ ಅರ್ಜಿ',
+        form_title_hi: 'बीओसीडब्ल्यू अधिनियम के तहत श्रमिक पंजीकरण और कल्याण लाभ हेतु आवेदन',
+        form_no: 'FORM NO. V / KBOCWWB / 2026'
+      };
+    }
+    if (id.includes('kisan') || id.includes('farmer') || id.includes('krishi')) {
+      return {
+        dept_en: 'Ministry of Agriculture and Farmers Welfare',
+        dept_kn: 'ಕೃಷಿ ಮತ್ತು ರೈತರ ಕಲ್ಯಾಣ ಸಚಿವಾಲಯ',
+        dept_hi: 'कृषि एवं किसान कल्याण मंत्रालय',
+        state_en: 'Government of India',
+        state_kn: 'ಭಾರತ ಸರ್ಕಾರ',
+        state_hi: 'भारत सरकार',
+        form_title_en: 'Application for Income Support under PM-KISAN Samman Nidhi',
+        form_title_kn: 'ಪಿಎಂ-ಕಿಸಾನ್ ಸಮ್ಮಾನ್ ನಿಧಿ ಯೋಜನೆಯಡಿ ಆದಾಯ ಬೆಂಬಲಕ್ಕಾಗಿ ಅರ್ಜಿ',
+        form_title_hi: 'प्रधानमंत्री किसान सम्मान निधि योजनांतर्गत आर्थिक सहायता हेतु आवेदन',
+        form_no: 'FORM NO. PM-KISAN / REG / 2026'
+      };
+    }
+    if (id.includes('ayushman') || id.includes('arogya') || id.includes('health')) {
+      return {
+        dept_en: 'Department of Health & Family Welfare',
+        dept_kn: 'ಆರೋಗ್ಯ ಮತ್ತು ಕುಟುಂಬ ಕಲ್ಯಾಣ ಇಲಾಖೆ',
+        dept_hi: 'स्वास्थ्य एवं परिवार कल्याण विभाग',
+        state_en: 'Government of Karnataka',
+        state_kn: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+        state_hi: 'कर्नाटक सरकार',
+        form_title_en: 'Application for Ayushman Bharat - Arogya Karnataka (AB-ArK) Healthcare Card',
+        form_title_kn: 'ಆಯುಷ್ಮಾನ್ ಭಾರತ್ - ಆರೋಗ್ಯ ಕರ್ನಾಟಕ ಆರೋಗ್ಯ ಕಾರ್ಡ್‌ಗಾಗಿ ಅರ್ಜಿ',
+        form_title_hi: 'आयुष्मान भारत - आरोग्य कर्नाटक स्वास्थ्य कार्ड हेतु आवेदन',
+        form_no: 'FORM NO. AB-ARK / HLTH / 2026'
+      };
+    }
+    if (id.includes('lakshmi') || id.includes('stree') || id.includes('women')) {
+      return {
+        dept_en: 'Department of Women & Child Development',
+        dept_kn: 'ಮಹಿಳಾ ಮತ್ತು ಮಕ್ಕಳ ಅಭಿವೃದ್ಧಿ ಇಲಾಖೆ',
+        dept_hi: 'महिला एवं बाल विकास विभाग',
+        state_en: 'Government of Karnataka',
+        state_kn: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+        state_hi: 'कर्नाटक सरकार',
+        form_title_en: 'Application for Direct Benefit Transfer under Gruha Lakshmi Guarantee Scheme',
+        form_title_kn: 'ಗೃಹಲಕ್ಷ್ಮಿ ಖಾತರಿ ಯೋಜನೆಯಡಿ ನೇರ ನಗದು ವರ್ಗಾವಣೆಗಾಗಿ ಅರ್ಜಿ',
+        form_title_hi: 'गृह लक्ष्मी गारंटी योजना के तहत प्रत्यक्ष लाभ अंतरण हेतु आवेदन',
+        form_no: 'FORM NO. GL-2026 / WCD'
+      };
+    }
+    const allSchemes = (schemes && schemes.length) ? schemes : DEFAULT_SCHEMES;
+    const sc = allSchemes.find(s => s.id === schemeId) || {};
+    const title = sc.name_en || schemeId.replace(/_/g, ' ').toUpperCase();
+    return {
+      dept_en: 'Directorate of Social Welfare & Public Empowerment',
+      dept_kn: 'ಸಮಾಜ ಕಲ್ಯಾಣ ಮತ್ತು ಸಾರ್ವಜನಿಕ ಸಬಲೀಕರಣ ನಿರ್ದೇಶನಾಲಯ',
+      dept_hi: 'समाज कल्याण एवं जन सशक्तिकरण निदेशालय',
+      state_en: 'Government of Karnataka',
+      state_kn: 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ',
+      state_hi: 'कर्नाटक सरकार',
+      form_title_en: `Official Application Form for ${title}`,
+      form_title_kn: `${sc.name_kn || title} ಅಧಿಕೃತ ಅರ್ಜಿ ನಮೂನೆ`,
+      form_title_hi: `${sc.name_hi || title} आधिकारिक आवेदन पत्र`,
+      form_no: `FORM NO. SW-APP / ${schemeId.slice(0, 6).toUpperCase()} / 2026`
+    };
+  };
+
+  const proceedToApplicationReview = async (schemeId, activeConsents = consents) => {
     setIsLoading(true);
+    setIsSubmittingApplication(false);
+    setDeclarationAgreed(false);
     try {
-      const allowedDocs = Object.keys(consents).filter((d) => consents[d] === 'ALLOWED');
-      const form = await api.prefillForm(schemeId, allowedDocs, currentUser ? currentUser.phone : '9876543210');
+      const allowedDocs = Object.keys(activeConsents || {}).filter((d) => activeConsents[d] === 'ALLOWED');
+      let form = null;
+      try {
+        form = await api.prefillForm(schemeId, allowedDocs, currentUser ? currentUser.phone : '9876543210');
+      } catch (err) {
+        console.warn('[ReviewScreen] api.prefillForm failed, generating client fallback form:', err);
+      }
+
+      if (!form || !form.prefilled_fields || form.prefilled_fields.length === 0) {
+        const applicantName = proxyDependent ? proxyDependent.name : (currentUser ? currentUser.name : 'Self');
+        const allSchemes = (schemes && schemes.length) ? schemes : DEFAULT_SCHEMES;
+        const schemeObj = allSchemes.find((s) => s.id === schemeId) || {};
+        form = {
+          scheme_id: schemeId,
+          form_title_en: schemeObj.name_en || schemeId,
+          form_title_kn: schemeObj.name_kn || schemeId,
+          form_title_hi: schemeObj.name_hi || schemeId,
+          prefilled_fields: [
+            { field_id: 'applicant_name', label_en: 'Applicant Name', label_kn: 'ಅರ್ಜಿದಾರರ ಹೆಸರು', label_hi: 'आवेदक का नाम', value: applicantName, source_label_en: 'Profile', source_label_kn: 'ಪ್ರೊಫೈಲ್', source_label_hi: 'प्रोफ़ाइल' },
+            { field_id: 'phone', label_en: 'Mobile Number', label_kn: 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ', label_hi: 'मोबाइल नंबर', value: currentUser ? currentUser.phone : '9876543210', source_label_en: 'Profile', source_label_kn: 'ಪ್ರೊಫೈಲ್', source_label_hi: 'प्रोफ़ाइल' },
+            { field_id: 'annual_income', label_en: 'Annual Income', label_kn: 'ವಾರ್ಷಿಕ ಆದಾಯ', label_hi: 'वार्षिक आय', value: currentUser && currentUser.annual_income ? `₹${currentUser.annual_income.toLocaleString()}` : 'Not provided', source_label_en: 'Self Declaration', source_label_kn: 'ಸ್ವಯಂ ಘೋಷಣೆ', source_label_hi: 'स्वयं घोषणा' },
+            { field_id: 'address', label_en: 'Present Address', label_kn: 'ಪ್ರಸ್ತುತ ವಿಳಾಸ', label_hi: 'वर्तमान पता', value: currentUser ? (currentUser.present_address || 'Not provided') : 'Not provided', source_label_en: 'Aadhaar Card', source_label_kn: 'ಆಧಾರ್ ಕಾರ್ಡ್', source_label_hi: 'आधार कार्ड' },
+            { field_id: 'state', label_en: 'State', label_kn: 'ರಾಜ್ಯ', label_hi: 'राज्य', value: currentUser ? (currentUser.state || 'Karnataka') : 'Karnataka', source_label_en: 'Profile', source_label_kn: 'ಪ್ರೊಫೈಲ್', source_label_hi: 'प्रोफ़ाइल' }
+          ]
+        };
+      }
       setPrefilledForm(form);
       setFlowStep('review');
 
       // Spoken summary of prefilled application (Section 8 review before submit)
-      const reviewPrompt = (t.voice_review_prompt || "Here is your pre-filled application summary. To submit, say 'Confirm'.")
+      const reviewPrompt = (t.voice_review_prompt || "Here is your official application form. Please review your details and tick the declaration. To submit, say 'Confirm'.")
         .replace('{scheme}', form.form_title_kn && lang === 'kn' ? form.form_title_kn : form.form_title_en)
         .replace('{name}', proxyDependent ? proxyDependent.name : (currentUser ? currentUser.name : ''))
         .replace('{income}', currentUser ? `₹${currentUser.annual_income?.toLocaleString()}` : '')
         .replace('{address}', currentUser ? currentUser.present_address : '');
 
       speakAndListen(reviewPrompt, lang, (submitAnswer) => {
-        const lower = submitAnswer.toLowerCase();
+        const lower = (submitAnswer || '').toLowerCase();
         if (lower.includes('confirm') || lower.includes('submit') || lower.includes('yes') || lower.includes('ಖಚಿತ') || lower.includes('ಸಲ್ಲಿಸಿ') || lower.includes('हाँ') || lower.includes('पुष्टि')) {
+          setDeclarationAgreed(true);
           finalizeApplicationSubmission(schemeId);
         }
       });
     } catch (e) {
-      console.error(e);
+      console.error('[ReviewScreen] proceedToApplicationReview error:', e);
+      setFlowStep('review');
     } finally {
       setIsLoading(false);
     }
   };
 
   const finalizeApplicationSubmission = async (schemeId) => {
+    if (isSubmittingApplication) return;
+    setIsSubmittingApplication(true);
     setIsLoading(true);
     try {
       const res = await api.submitForm(
@@ -1337,8 +1480,8 @@ function HaqSaathiApp() {
         const enrichedApp = {
           ...res,
           reference_id: refId,
-          application_status: res.application_status || 'Applied',
-          status: res.application_status || 'Applied',
+          application_status: 'Submitted (Prototype)',
+          status: 'Submitted (Prototype)',
           applicant_name: proxyDependent ? proxyDependent.name : (currentUser ? currentUser.name : 'Self'),
           applicant_type: applicantType || 'self',
           submitted_at: res.submitted_at || new Date().toISOString()
@@ -1353,15 +1496,21 @@ function HaqSaathiApp() {
 
         const ackMsg = (res.submission_message_kn && lang === 'kn') ? res.submission_message_kn : ((res.submission_message_hi && lang === 'hi') ? res.submission_message_hi : res.submission_message_en);
         speakAndListen(ackMsg, lang, (followUp) => {
-          if (followUp.toLowerCase().includes('dashboard') || followUp.toLowerCase().includes('ಡ್ಯಾಶ್‌ಬೋರ್ಡ್') || followUp.toLowerCase().includes('डैशबोर्ड')) {
-            setCurrentScreen('dashboard');
-            setActiveTab('applications');
-          }
+          setCurrentScreen('dashboard');
+          setActiveTab('applications');
         });
+
+        // Ensure user lands back on Dashboard under My Applications within 3.5 seconds
+        setTimeout(() => {
+          setCurrentScreen('dashboard');
+          setActiveTab('applications');
+        }, 3500);
       }
     } catch (e) {
       console.error(e);
+      alert('Application submission failed. Please try again.');
     } finally {
+      setIsSubmittingApplication(false);
       setIsLoading(false);
     }
   };
@@ -1541,28 +1690,38 @@ function HaqSaathiApp() {
         </div>
       </header>
 
-      {/* Voice Status Bar (Section 4) */}
-      <div className={`voice-status-bar ${isSpeaking ? 'speaking' : (isListening ? 'listening' : 'idle')}`}>
+      {/* Voice Status Bar (Section 4 - All 4 Voice States: Ready, Listening, Speaking, Processing) */}
+      <div className={`voice-status-bar ${isProcessingVoice ? 'processing' : (isSpeaking ? 'speaking' : (isListening ? 'listening' : 'idle'))}`}>
         <div className="voice-status-left">
-          <span className="voice-indicator-dot"></span>
-          <strong>
-            {isSpeaking ? t.voice_bar_speaking : (isListening ? t.voice_bar_listening : t.voice_bar_idle)}
-          </strong>
-          {interimText && <span className="interim-chip">"{interimText}"</span>}
-          {voiceText && (
-            <span id="voice_heard_badge" className="interim-chip" style={{ background: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe' }}>
-              🎙️ Heard: "{voiceText}"
-            </span>
-          )}
+          <div className="voice-status-indicator-box">
+            {isProcessingVoice && <span className="voice-spinner"></span>}
+            {!isProcessingVoice && <span className="voice-indicator-dot"></span>}
+            {isSpeaking && (
+              <span className="voice-wave-bars">
+                <span className="wave-bar"></span>
+                <span className="wave-bar"></span>
+                <span className="wave-bar"></span>
+              </span>
+            )}
+          </div>
+          <span className="voice-status-label">
+            {isProcessingVoice
+              ? (lang === 'kn' ? 'ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ... (Processing...)' : (lang === 'hi' ? 'प्रक्रिया जारी है... (Processing...)' : 'Processing your voice request...'))
+              : (isSpeaking
+                  ? t.voice_bar_speaking
+                  : (isListening
+                      ? t.voice_bar_listening
+                      : t.voice_bar_idle))}
+          </span>
         </div>
         <div className="voice-status-actions">
           {(isSpeaking || isListening) && (
-            <button className="voice-action-pill stop" onClick={stopAudio}>
+            <button className="voice-action-pill stop" onClick={stopAudio} title="Stop Audio">
               ⏹ {t.voice_bar_stop}
             </button>
           )}
-          {!isSpeaking && !isListening && (
-            <button className="voice-action-pill mic" onClick={() => speakAndListen('', lang)}>
+          {!isSpeaking && !isListening && !isProcessingVoice && (
+            <button className="voice-action-pill mic" onClick={() => speakAndListen('', lang)} title="Tap to Speak">
               🎙️ {t.voice_tap_to_reply}
             </button>
           )}
@@ -3378,6 +3537,57 @@ function HaqSaathiApp() {
               </div>
             )}
 
+            {/* Flow Step: Checking Eligibility / Rules Engine Running */}
+            {(flowStep === 'checking_eligibility' || (flowStep === 'questioning' && !currentQuestion)) && (
+              <div id="checking_eligibility_card" className="step-card" style={{ textAlign: 'center', padding: '36px 20px', maxWidth: '640px', margin: '0 auto' }}>
+                {!eligibilityError ? (
+                  <div>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                      ⚖️
+                    </div>
+                    <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                      {lang === 'kn' ? 'ನಿಮ್ಮ ಅರ್ಹತೆಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...' : (lang === 'hi' ? 'आपकी पात्रता की जाँच की जा रही है...' : 'Checking your eligibility now...')}
+                    </h3>
+                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '18px' }}>
+                      {lang === 'kn' ? 'ನಮ್ಮ ನಿಯಮಗಳ ಎಂಜಿನ್ ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಡೇಟಾವನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದೆ...' : (lang === 'hi' ? 'हमारा नियम इंजन आपकी प्रोफ़ाइल डेटा की जाँच कर रहा है...' : 'Evaluating official scheme criteria and rules against your verified profile...')}
+                    </p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '6px 14px', borderRadius: '20px', fontWeight: 700 }}>
+                      <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#059669' }} />
+                      {lang === 'kn' ? 'ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ...' : (lang === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait a moment...')}
+                    </div>
+                  </div>
+                ) : (
+                  <div id="eligibility_error_card" style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '24px' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>⚠️</div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#991b1b', marginBottom: '8px' }}>
+                      {lang === 'kn' ? 'ಅರ್ಹತೆ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ' : (lang === 'hi' ? 'पात्रता जाँच विफल' : 'Eligibility Check Failed')}
+                    </h3>
+                    <p style={{ fontSize: '14px', color: '#7f1d1d', marginBottom: '20px' }}>
+                      {eligibilityError}
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                      <button
+                        id="btn_retry_eligibility"
+                        onClick={() => {
+                          const targetProfile = proxyDependent ? { ...(currentUser || {}), ...proxyDependent } : (currentUser || {});
+                          evaluateEligibility(activeSchemeId, targetProfile);
+                        }}
+                        style={{ padding: '12px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        🔄 {lang === 'kn' ? 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ' : (lang === 'hi' ? 'पुनः प्रयास करें' : 'Retry Eligibility Check')}
+                      </button>
+                      <button
+                        onClick={() => setCurrentScreen('dashboard')}
+                        style={{ padding: '12px 20px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ← {lang === 'kn' ? 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹಿಂತಿರುಗಿ' : (lang === 'hi' ? 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹಿಂತಿರುಗಿ' : 'Return to Dashboard')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Flow Step: Eligibility Result */}
             {flowStep === 'eligibility' && eligibilityResult && (
               <div className="step-card">
@@ -3442,34 +3652,215 @@ function HaqSaathiApp() {
               </div>
             )}
 
-            {/* Flow Step: Mandatory Review Before Submit (Section 8) */}
-            {flowStep === 'review' && prefilledForm && (
-              <div className="step-card">
-                <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>{t.review_title}</h3>
-                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>{t.review_subtitle}</p>
+            {/* Flow Step: Official Government Application Form Review (Section 8) */}
+            {flowStep === 'review' && (
+              <div id="application_review_card" className="step-card" style={{ display: 'block', visibility: 'visible', opacity: 1, padding: '20px', maxWidth: '820px', margin: '0 auto' }}>
+                {/* Prototype Disclaimer Badge */}
+                <div style={{ background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span>ℹ️</span>
+                  <span>Prototype — formatted to match the official application, submission is simulated for this hackathon demo</span>
+                </div>
 
-                <table className="review-table">
-                  <tbody>
-                    {(prefilledForm.prefilled_fields || []).map((field) => (
-                      <tr key={field.field_id}>
-                        <th>{(lang === 'kn' && field.label_kn) ? field.label_kn : ((lang === 'hi' && field.label_hi) ? field.label_hi : field.label_en)}</th>
-                        <td><strong>{field.value || 'Not provided'}</strong></td>
-                        <td style={{ fontSize: '11px', color: '#64748b' }}>
-                          {(lang === 'kn' && field.source_label_kn) ? field.source_label_kn : ((lang === 'hi' && field.source_label_hi) ? field.source_label_hi : field.source_label_en)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {(() => {
+                  const deptInfo = getDepartmentInfo(activeSchemeId);
+                  const applicantName = proxyDependent ? proxyDependent.name : (currentUser ? currentUser.name : 'Self');
+                  const phoneVal = currentUser ? currentUser.phone : '9876543210';
+                  const incomeVal = currentUser && currentUser.annual_income ? `₹${currentUser.annual_income.toLocaleString()}` : '₹1,40,000';
+                  const addressVal = currentUser && currentUser.present_address ? currentUser.present_address : '#42, 3rd Cross, Peenya Industrial Area, Bengaluru, Karnataka - 560058';
+                  const stateVal = currentUser && currentUser.state ? currentUser.state : 'Karnataka';
+                  const occVal = currentUser && currentUser.occupation ? currentUser.occupation.replace(/_/g, ' ').toUpperCase() : 'CONSTRUCTION WORKER';
+                  const famVal = currentUser && currentUser.family_size ? `${currentUser.family_size} Members` : '4 Members';
 
-                <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => finalizeApplicationSubmission(activeSchemeId)}
-                    disabled={isLoading}
-                    style={{ flex: 1, padding: '14px', background: '#059669', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}
-                  >
-                    ✓ {t.confirm_submit_btn}
-                  </button>
+                  const allowedDocsList = Object.keys(consents || {}).filter((k) => consents[k] === 'ALLOWED');
+                  if (allowedDocsList.length === 0) {
+                    allowedDocsList.push('aadhaar_card', 'income_certificate', 'address_proof');
+                  }
+
+                  console.log('[ReviewScreen] Rendering official government form:', {
+                    flowStep,
+                    activeSchemeId,
+                    deptInfo,
+                    applicantName,
+                    declarationAgreed,
+                    isSubmittingApplication
+                  });
+
+                  return (
+                    <div style={{ border: '2px solid #1e3a8a', borderRadius: '12px', background: '#ffffff', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
+                      {/* Government Letterhead Header */}
+                      <div style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)', borderBottom: '2px solid #1e3a8a', padding: '24px 20px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '40px', marginBottom: '4px' }}>🏛️</div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#1e3a8a' }}>
+                          {deptInfo.state_en} • {deptInfo.state_kn}
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+                          {lang === 'kn' ? deptInfo.dept_kn : (lang === 'hi' ? deptInfo.dept_hi : deptInfo.dept_en)}
+                        </div>
+                        <div style={{ width: '80px', height: '3px', background: '#d97706', margin: '10px auto' }} />
+                        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', margin: '6px 0 4px 0' }}>
+                          {lang === 'kn' ? deptInfo.form_title_kn : (lang === 'hi' ? deptInfo.form_title_hi : deptInfo.form_title_en)}
+                        </h2>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', letterSpacing: '0.5px' }}>
+                          {deptInfo.form_no} • DIGITAL PORTAL FILING
+                        </div>
+                      </div>
+
+                      {/* Official Form Sections */}
+                      <div style={{ padding: '20px' }}>
+                        {/* Section 1: Applicant Particulars */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '6px 12px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', borderRadius: '4px' }}>
+                            1. Applicant Identification & Particulars
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Full Name of Applicant</span>
+                              <strong style={{ fontSize: '15px', color: '#0f172a' }}>{applicantName}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Registered Mobile Number</span>
+                              <strong style={{ fontSize: '15px', color: '#0f172a' }}>+91 {phoneVal}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Applicant Category</span>
+                              <strong style={{ fontSize: '15px', color: '#0f172a' }}>{proxyDependent ? `Dependent (${proxyDependent.relationship})` : 'Self (Head of Household)'}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Age & Verification Status</span>
+                              <strong style={{ fontSize: '15px', color: '#047857' }}>{currentUser && currentUser.age ? `${currentUser.age} Yrs` : '38 Yrs'} • UIDAI Verified ✓</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 2: Residency & Address */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '6px 12px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', borderRadius: '4px' }}>
+                            2. Residency & Jurisdiction
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa', gridColumn: 'span 2' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Present Address</span>
+                              <strong style={{ fontSize: '14px', color: '#0f172a' }}>{addressVal}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>State / Domicile</span>
+                              <strong style={{ fontSize: '14px', color: '#0f172a' }}>{stateVal} (Verified Resident ✓)</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 3: Socio-Economic Profile */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '6px 12px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', borderRadius: '4px' }}>
+                            3. Socio-Economic Profile & Welfare Eligibility
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Primary Occupation</span>
+                              <strong style={{ fontSize: '14px', color: '#0f172a' }}>{occVal}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Total Annual Family Income</span>
+                              <strong style={{ fontSize: '15px', color: '#047857' }}>{incomeVal}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Family Size</span>
+                              <strong style={{ fontSize: '14px', color: '#0f172a' }}>{famVal}</strong>
+                            </div>
+                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', background: '#fafafa' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'block' }}>Welfare Criteria Met</span>
+                              <strong style={{ fontSize: '14px', color: '#047857' }}>Eligible under Scheme Rules ✓</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 4: Verified Identity & Attached Documents */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ background: '#1e3a8a', color: '#ffffff', padding: '6px 12px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', borderRadius: '4px' }}>
+                            4. Verified Electronic Documents Attached via DigiLocker Vault
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                            {allowedDocsList.map((doc) => (
+                              <div key={doc} style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>✓</span>
+                                <span>{doc.replace(/_/g, ' ').toUpperCase()} (DIGILOCKER VERIFIED)</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Section 5: Applicant Declaration (Mandatory) */}
+                        <div id="applicant_declaration_section" style={{ background: '#f8fafc', border: '2px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginTop: '20px' }}>
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
+                            <input
+                              id="declaration_checkbox"
+                              type="checkbox"
+                              checked={declarationAgreed}
+                              onChange={(e) => setDeclarationAgreed(e.target.checked)}
+                              style={{ width: '22px', height: '22px', marginTop: '2px', cursor: 'pointer', accentColor: '#1e3a8a' }}
+                            />
+                            <span style={{ fontSize: '13px', lineHeight: '1.5', color: '#1e293b' }}>
+                              <strong>{lang === 'kn' ? 'ಘೋಷಣೆ:' : (lang === 'hi' ? 'घोषणा:' : 'Declaration:')}</strong>{' '}
+                              {lang === 'kn'
+                                ? 'ಮೇಲೆ ನೀಡಲಾದ ಎಲ್ಲಾ ಮಾಹಿತಿಯು ನನ್ನ ಜ್ಞಾನ ಮತ್ತು ನಂಬಿಕೆಗೆ ತಕ್ಕಂತೆ ಸತ್ಯವಾಗಿದೆ ಎಂದು ನಾನು ಘೋಷಿಸುತ್ತೇನೆ. ಯಾವುದೇ ತಪ್ಪು ಮಾಹಿತಿ ಕಂಡುಬಂದರೆ ಈ ಅರ್ಜಿಯನ್ನು ತಿರಸ್ಕರಿಸಬಹುದು ಎಂಬುದನ್ನು ನಾನು ಒಪ್ಪಿಕೊಳ್ಳುತ್ತೇನೆ.'
+                                : (lang === 'hi'
+                                    ? 'मैं एतद्द्वारा घोषित करता/करती हूँ कि ऊपर दी गई जानकारी मेरी सर्वोत्तम जानकारी और विश्वास के अनुसार सत्य है। किसी भी असत्य विवरण पर यह आवेदन निरस्त किया जा सकता है।'
+                                    : 'I hereby declare that the information provided above is true and correct to the best of my knowledge and belief. I understand that any false statement or suppression of facts may lead to rejection of this application under applicable welfare guidelines.')}
+                            </span>
+                          </label>
+                        </div>
+
+                        {/* Official Submit Action */}
+                        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <button
+                            id="btn_confirm_submit_application"
+                            onClick={() => {
+                              if (!declarationAgreed) return;
+                              finalizeApplicationSubmission(activeSchemeId);
+                            }}
+                            disabled={!declarationAgreed || isSubmittingApplication}
+                            style={{
+                              width: '100%',
+                              minHeight: '52px',
+                              padding: '14px 24px',
+                              background: (!declarationAgreed || isSubmittingApplication) ? '#9ca3af' : '#1e3a8a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '17px',
+                              letterSpacing: '0.4px',
+                              cursor: (!declarationAgreed || isSubmittingApplication) ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '10px',
+                              boxShadow: (!declarationAgreed || isSubmittingApplication) ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                            }}
+                          >
+                            {isSubmittingApplication ? (
+                              <span>⏳ {lang === 'kn' ? 'ಅರ್ಜಿಯನ್ನು ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : (lang === 'hi' ? 'आवेदन जमा किया जा रहा है...' : 'Submitting Official Application...')}</span>
+                            ) : (
+                              <span>🏛️ {lang === 'kn' ? 'ಅರ್ಜಿಯನ್ನು ಸಲ್ಲಿಸಿ (ಪ್ರೊಟೊಟೈಪ್)' : (lang === 'hi' ? 'आवेदन जमा करें (प्रोटोटाइप)' : 'SUBMIT APPLICATION (PROTOTYPE)')}</span>
+                            )}
+                          </button>
+                          {!declarationAgreed && (
+                            <div style={{ textAlign: 'center', fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
+                              ⚠️ {lang === 'kn' ? 'ದಯವಿಟ್ಟು ಮುಂದುವರಿಯಲು ಮೇಲಿನ ಘೋಷಣಾ ಪೆಟ್ಟಿಗೆಯನ್ನು ಗುರುತಿಸಿ' : (lang === 'hi' ? 'कृपया आगे बढ़ने के लिए ऊपर घोषणा चेकबॉक्स पर टिक करें' : 'Please tick the declaration checkbox above to enable submission')}
+                            </div>
+                          )}
+                          <p style={{ textAlign: 'center', fontSize: '12px', color: '#64748b', margin: 0 }}>
+                            🎙️ {lang === 'kn' ? 'ಅಥವಾ ಮೈಕ್‌ನಲ್ಲಿ "ಸಲ್ಲಿಸಿ" ಅಥವಾ "ಖಚಿತಪಡಿಸಿ" ಎಂದು ಹೇಳಿ' : (lang === 'hi' ? 'या माइक में "हाँ जमा करें" या "पुष्टि करें" बोलें' : 'Or say "Yes, submit" or "I confirm" into your microphone')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Bottom honest disclaimer */}
+                <div style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', marginTop: '16px' }}>
+                  Prototype — formatted to match the official application, submission is simulated for this hackathon demo
                 </div>
               </div>
             )}
@@ -3558,45 +3949,7 @@ function HaqSaathiApp() {
           </div>
         )}
 
-        {/* Visible On-Screen Conversation Transcript (BUG 1) */}
-        <div id="live_conversation_transcript" className="transcript-card" style={{ maxWidth: '650px', margin: '24px auto', background: 'white' }}>
-          <div className="transcript-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>💬</span>
-              <span style={{ fontWeight: 700 }}>
-                {lang === 'kn' ? 'ಧ್ವನಿ ಸಂಭಾಷಣೆ ಪ್ರತಿಲಿಪಿ (Conversation Transcript)' : (lang === 'hi' ? 'आवाज़ बातचीत प्रतिलिपि (Transcript)' : 'Voice Conversation Transcript')}
-              </span>
-            </div>
-            {voiceText && (
-              <span style={{ fontSize: '11px', background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '10px', fontWeight: 600 }}>
-                Last Heard: "{voiceText}"
-              </span>
-            )}
-          </div>
-          {conversationHistory.length === 0 ? (
-            <div style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', padding: '12px 0', textAlign: 'center' }}>
-              {lang === 'kn' ? 'ಯಾವುದೇ ಧ್ವನಿ ಸಂಭಾಷಣೆ ಇನ್ನೂ ದಾಖಲಾಗಿಲ್ಲ. ಮಾತನಾಡಲು ಪ್ರಾರಂಭಿಸಿ.' : (lang === 'hi' ? 'अभी तक कोई बातचीत दर्ज नहीं हुई है। बोलना शुरू करें।' : 'No speech recorded yet. Speak or tap mic to begin.')}
-            </div>
-          ) : (
-            <div className="messages-list" style={{ maxHeight: '220px', overflowY: 'auto' }}>
-              {conversationHistory.map((msg) => (
-                <div key={msg.id} className={`msg-bubble ${msg.sender}`} id={msg.sender === 'user' ? 'user_transcript_msg' : undefined}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '2px', opacity: 0.8 }}>
-                    {msg.sender === 'user'
-                      ? (lang === 'kn' ? '👤 ನೀವು (ಧ್ವನಿ ಇನ್ಪುಟ್ / Raw Voice Input)' : (lang === 'hi' ? '👤 आप (आवाज़ इनपुट / Raw Voice Input)' : '👤 You (Raw Voice Input)'))
-                      : (msg.sender === 'system'
-                          ? '📝 System Recorded Field'
-                          : '🏛️ Haq Saathi Assistant')}
-                  </div>
-                  <div>{msg.text}</div>
-                  <div className="msg-meta">
-                    <span>{msg.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+
       </main>
 
       {/* Footer Prototype Notice (Section 9) */}

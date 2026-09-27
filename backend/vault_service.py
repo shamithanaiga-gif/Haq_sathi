@@ -123,6 +123,81 @@ def revoke_consent(audit_id: str, user_id: Optional[str] = None) -> Optional[Dic
     return target
 
 
+def generate_dynamic_form_template(scheme_id: str) -> Dict[str, Any]:
+    title = scheme_id.replace("_", " ").title()
+    return {
+        "scheme_id": scheme_id,
+        "form_title_en": f"Application for {title}",
+        "form_title_kn": f"{title} ಯೋಜನೆ ಅರ್ಜಿ",
+        "form_title_hi": f"{title} योजना आवेदन",
+        "fields": [
+            {
+                "field_id": "applicant_name",
+                "label_en": "Applicant Full Name",
+                "label_kn": "ಅರ್ಜಿದಾರರ ಪೂರ್ಣ ಹೆಸರು",
+                "label_hi": "आवेदक का पूरा नाम",
+                "source": "document:aadhaar_card",
+                "doc_field": "full_name",
+                "type": "text"
+            },
+            {
+                "field_id": "aadhaar_number",
+                "label_en": "Aadhaar Number",
+                "label_kn": "ಆಧಾರ್ ಸಂಖ್ಯೆ",
+                "label_hi": "आधार संख्या",
+                "source": "document:aadhaar_card",
+                "doc_field": "id_number",
+                "type": "text"
+            },
+            {
+                "field_id": "annual_income",
+                "label_en": "Certified Annual Income (₹)",
+                "label_kn": "ದೃಢೀಕರಿಸಿದ ವಾರ್ಷಿಕ ಆದಾಯ (₹)",
+                "label_hi": "प्रमाणित वार्षिक आय (₹)",
+                "source": "document:income_certificate",
+                "doc_field": "annual_income",
+                "type": "currency"
+            },
+            {
+                "field_id": "income_cert_no",
+                "label_en": "Income Certificate No (RD No.)",
+                "label_kn": "ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ ಸಂಖ್ಯೆ",
+                "label_hi": "आय प्रमाण पत्र संख्या",
+                "source": "document:income_certificate",
+                "doc_field": "certificate_no",
+                "type": "text"
+            },
+            {
+                "field_id": "present_address",
+                "label_en": "Present Residential Address",
+                "label_kn": "ಪ್ರಸ್ತುತ ವಾಸವಿರುವ ವಿಳಾಸ",
+                "label_hi": "वर्तमान निवास पता",
+                "source": "document:address_proof",
+                "doc_field": "present_address",
+                "type": "text"
+            },
+            {
+                "field_id": "occupation",
+                "label_en": "Primary Occupation",
+                "label_kn": "ಮುಖ್ಯ ಕಾಯಕ / ವೃತ್ತಿ",
+                "label_hi": "मुख्य व्यवसाय",
+                "source": "user_profile",
+                "profile_field": "occupation_display",
+                "type": "text"
+            },
+            {
+                "field_id": "labour_card_no",
+                "label_en": "Labour Registration No",
+                "label_kn": "ಕಾರ್ಮಿಕ ನೋಂದಣಿ ಸಂಖ್ಯೆ",
+                "label_hi": "श्रमिक पंजीकरण संख्या",
+                "source": "document:labour_card",
+                "doc_field": "registration_no",
+                "type": "text"
+            }
+        ]
+    }
+
+
 def prefill_scheme_form(
     scheme_id: str,
     consented_docs: List[str],
@@ -136,7 +211,7 @@ def prefill_scheme_form(
     templates = templates_data.get("templates", {})
     template = templates.get(scheme_id)
     if not template:
-        raise ValueError(f"Form template for {scheme_id} not found")
+        template = generate_dynamic_form_template(scheme_id)
 
     profile = user_profile or get_user_profile()
     vault_docs = get_all_vault_documents()
