@@ -10,8 +10,7 @@ import re
 import uuid
 from typing import Dict, Any, List, Optional, Tuple
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+from backend.vault_service import BASE_DIR, DATA_DIR
 USERS_DB_FILE = os.path.join(DATA_DIR, "users_db.json")
 
 # In-memory OTP storage for demo: { phone: { "otp": "123456", "created_at": float, "attempts": int } }

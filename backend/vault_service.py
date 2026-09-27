@@ -10,7 +10,35 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+
+
+def get_data_dir() -> str:
+    default_dir = os.path.join(BASE_DIR, "data")
+    try:
+        os.makedirs(default_dir, exist_ok=True)
+        test_file = os.path.join(default_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return default_dir
+    except (OSError, PermissionError):
+        tmp_dir = "/tmp/haq_saathi_data"
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir, exist_ok=True)
+            import shutil
+            if os.path.exists(default_dir):
+                for item in os.listdir(default_dir):
+                    s = os.path.join(default_dir, item)
+                    d = os.path.join(tmp_dir, item)
+                    if os.path.isfile(s) and not os.path.exists(d):
+                        try:
+                            shutil.copy2(s, d)
+                        except Exception:
+                            pass
+        return tmp_dir
+
+
+DATA_DIR = get_data_dir()
 VAULT_FILE = os.path.join(DATA_DIR, "mock_document_vault.json")
 TEMPLATES_FILE = os.path.join(DATA_DIR, "form_templates.json")
 AUDIT_FILE = os.path.join(DATA_DIR, "audit_log.json")

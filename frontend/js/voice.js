@@ -1,5 +1,7 @@
 // Haq Saathi - Centralized Web Speech API Voice Controller (STT + TTS Engine)
 // Strictly trilingual: en-IN, kn-IN, hi-IN
+// Resilient mobile support: Auto-detects missing native OS voices (e.g. Kannada on mobile)
+// and seamlessly streams native audio via /api/tts fallback.
 
 class VoiceController {
   constructor() {
@@ -7,11 +9,16 @@ class VoiceController {
     this.isListening = false;
     this.isSpeaking = false;
     this.currentLanguage = 'kn'; // Single source of truth: 'kn' | 'en' | 'hi'
-    this.synth = window.speechSynthesis || null;
+    this.synth = (typeof window !== 'undefined' && window.speechSynthesis) ? window.speechSynthesis : null;
     this.voices = [];
     this.activeUtterance = null;
+    this.audioPlayer = null;
     this.silenceTimer = null;
     this.listenTimeout = null;
+    this.watchdogTimer = null;
+
+    this.isMobile = (typeof navigator !== 'undefined') &&
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     this.onResultCallback = null;
     this.onInterimCallback = null;
@@ -28,78 +35,74 @@ class VoiceController {
   }
 
   initSpeechRecognition() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    const SpeechRec = (typeof window !== 'undefined') && (window.SpeechRecognition || window.webkitSpeechRecognition || null);
     if (SpeechRec) {
-      this.recognition = new SpeechRec();
-      this.recognition.continuous = true; // Continuous listening for natural full sentence
-      this.recognition.interimResults = true;
-      this.recognition.lang = this.getSpeechCode();
+      try {
+        this.recognition = new SpeechRec();
+        // On mobile, single-shot dictation mode is required to prevent network dropouts
+        this.recognition.continuous = !this.isMobile;
+        this.recognition.interimResults = true;
+        this.recognition.lang = this.getSpeechCode();
 
-      this.recognition.onstart = () => {
-        this.isListening = true;
-        this.notifyStateChange();
-      };
+        this.recognition.onstart = () => {
+          this.isListening = true;
+          this.notifyStateChange();
+        };
 
-      this.recognition.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        this.recognition.onresult = (event) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
           }
-        }
 
-        // Live interim transcript update
-        if (interimTranscript && this.onInterimCallback) {
-          this.onInterimCallback(interimTranscript);
-        }
-
-        // Reset silence timer on any speech detected
-        if (this.silenceTimer) {
-          clearTimeout(this.silenceTimer);
-          this.silenceTimer = null;
-        }
-
-        // Final utterance captured or pause detected
-        if (finalTranscript.trim()) {
-          console.log(`[VoiceController] Final transcript received at ${new Date().toISOString()}: "${finalTranscript.trim()}"`);
-          if (this.onResultCallback) {
-            const cb = this.onResultCallback;
-            this.stopListening();
-            console.log(`[VoiceController] Handing transcript to conversation logic at ${new Date().toISOString()}: "${finalTranscript.trim()}"`);
-            cb(finalTranscript.trim());
+          if (interimTranscript && this.onInterimCallback) {
+            this.onInterimCallback(interimTranscript);
           }
-        } else if (interimTranscript.trim()) {
-          // 1.0s silence threshold (roughly 1.0-1.2s) for instant response without cutoffs
-          const capturedInterim = interimTranscript.trim();
-          this.silenceTimer = setTimeout(() => {
+
+          if (this.silenceTimer) {
+            clearTimeout(this.silenceTimer);
+            this.silenceTimer = null;
+          }
+
+          if (finalTranscript.trim()) {
+            console.log(`[VoiceController] Final transcript received: "${finalTranscript.trim()}"`);
             if (this.onResultCallback) {
-              console.log(`[VoiceController] Silence threshold reached (1.0s). Finalizing interim transcript at ${new Date().toISOString()}: "${capturedInterim}"`);
               const cb = this.onResultCallback;
               this.stopListening();
-              console.log(`[VoiceController] Handing transcript to conversation logic at ${new Date().toISOString()}: "${capturedInterim}"`);
-              cb(capturedInterim);
+              cb(finalTranscript.trim());
             }
-          }, 1000);
-        }
-      };
+          } else if (interimTranscript.trim()) {
+            const capturedInterim = interimTranscript.trim();
+            this.silenceTimer = setTimeout(() => {
+              if (this.onResultCallback) {
+                console.log(`[VoiceController] Finalizing interim transcript: "${capturedInterim}"`);
+                const cb = this.onResultCallback;
+                this.stopListening();
+                cb(capturedInterim);
+              }
+            }, 1000);
+          }
+        };
 
-      this.recognition.onerror = (event) => {
-        console.warn('[SpeechRec Error]:', event.error);
-        if (event.error === 'no-speech' || event.error === 'network') {
-          // Non-fatal, keep ready
-        }
-        this.isListening = false;
-        this.notifyStateChange();
-      };
+        this.recognition.onerror = (event) => {
+          console.warn('[SpeechRec Error]:', event.error);
+          this.isListening = false;
+          this.notifyStateChange();
+        };
 
-      this.recognition.onend = () => {
-        this.isListening = false;
-        this.notifyStateChange();
-      };
+        this.recognition.onend = () => {
+          this.isListening = false;
+          this.notifyStateChange();
+        };
+      } catch (err) {
+        console.warn('SpeechRecognition initialization error:', err);
+      }
     } else {
       console.warn('Web Speech API recognition not supported in this browser.');
     }
@@ -108,7 +111,11 @@ class VoiceController {
   initVoices() {
     if (!this.synth) return;
     const loadVoices = () => {
-      this.voices = this.synth.getVoices();
+      try {
+        this.voices = this.synth.getVoices() || [];
+      } catch (e) {
+        this.voices = [];
+      }
     };
     loadVoices();
     if (this.synth.onvoiceschanged !== undefined) {
@@ -117,24 +124,106 @@ class VoiceController {
   }
 
   /**
-   * Updates language and immediately updates speech recognition & TTS voice
-   * without needing a page refresh!
+   * Returns true if the device actually has an installed TTS voice matching the language.
+   * On most mobile phones, Kannada (kn-IN) is NOT installed by default.
    */
+  hasNativeVoice(lang = this.currentLanguage) {
+    if (!this.synth || !this.voices || this.voices.length === 0) return false;
+    const code = this.getSpeechCode(lang).toLowerCase();
+    const prefix = lang.toLowerCase();
+    return this.voices.some(v => {
+      const vLang = (v.lang || '').toLowerCase();
+      const vName = (v.name || '').toLowerCase();
+      return vLang === code || vLang.startsWith(prefix) || vName.includes(prefix);
+    });
+  }
+
   setLanguage(lang) {
     this.currentLanguage = lang;
     const code = this.getSpeechCode(lang);
     if (this.recognition) {
-      this.recognition.lang = code;
+      try {
+        this.recognition.lang = code;
+      } catch (e) {}
     }
     this.notifyStateChange();
   }
 
   /**
-   * Centralized Speak-and-Listen method (Section 4):
-   * 1. Cancels active speech / listening to prevent echo
-   * 2. Speaks the provided text in the target language (kn-IN, hi-IN, or en-IN)
-   * 3. Once speaking is fully completed, buffers audio hardware and starts listening
-   * 4. Passes recognized speech directly to onResult callback
+   * Resilient audio fallback streaming from /api/tts or direct Google TTS for mobile devices.
+   */
+  playAudioFallback(text, lang, onEnd) {
+    this.stopSpeaking();
+    this.isSpeaking = true;
+    this.notifyStateChange();
+
+    try {
+      const cleanText = text.trim();
+      const speechLang = lang === 'kn' ? 'kn' : (lang === 'hi' ? 'hi' : 'en');
+      const base = (typeof API_BASE !== 'undefined') ? API_BASE : (typeof window !== 'undefined' ? window.location.origin : '');
+      const ttsUrl = `${base}/api/tts?lang=${speechLang}&text=${encodeURIComponent(cleanText)}`;
+
+      const audio = new Audio();
+      this.audioPlayer = audio;
+      audio.crossOrigin = 'anonymous';
+
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        this.isSpeaking = false;
+        this.audioPlayer = null;
+        this.notifyStateChange();
+        if (onEnd) onEnd();
+      };
+
+      audio.onended = finish;
+      audio.onerror = () => {
+        console.warn('[VoiceController] Server TTS failed, trying direct Google TTS fallback...');
+        const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${speechLang}&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+        const fallbackAudio = new Audio(directUrl);
+        this.audioPlayer = fallbackAudio;
+        fallbackAudio.onended = finish;
+        fallbackAudio.onerror = finish;
+        fallbackAudio.play().catch(finish);
+      };
+
+      // Watchdog in case audio hangs
+      const maxMs = Math.max(3000, (cleanText.length * 100) + 2000);
+      const audioWatchdog = setTimeout(() => {
+        if (!finished) {
+          console.warn('[VoiceController] Audio fallback timeout reached');
+          finish();
+        }
+      }, maxMs);
+
+      const origFinish = finish;
+      const wrappedFinish = () => {
+        clearTimeout(audioWatchdog);
+        origFinish();
+      };
+      audio.onended = wrappedFinish;
+
+      audio.src = ttsUrl;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('[VoiceController] HTML5 Audio autoplay restricted:', err);
+          wrappedFinish();
+        });
+      }
+    } catch (err) {
+      console.warn('[VoiceController] playAudioFallback exception:', err);
+      this.isSpeaking = false;
+      this.notifyStateChange();
+      if (onEnd) onEnd();
+    }
+  }
+
+  /**
+   * Centralized Speak-and-Listen method:
+   * Uses native Web Speech API when voice is installed; automatically falls back
+   * to high-fidelity audio stream when voice is missing on mobile (especially Kannada kn-IN).
    */
   speakAndListen(text, lang, onResult, options = {}) {
     this.stopSpeaking();
@@ -151,6 +240,31 @@ class VoiceController {
       return;
     }
 
+    const speechResultHandler = (finalText) => {
+      if (!finalText) return;
+      if (onResult) {
+        onResult(finalText.trim());
+      }
+    };
+
+    const targetLang = lang || this.currentLanguage;
+
+    // Check if device lacks native voice for target language (always true for Kannada on mobile)
+    if (!this.hasNativeVoice(targetLang)) {
+      console.log(`[VoiceController] No native TTS voice found on this device for '${targetLang}'. Using high-fidelity audio fallback.`);
+      this.playAudioFallback(text, targetLang, () => {
+        if (options.onSpeakEnd) {
+          options.onSpeakEnd();
+        }
+        if (options.listenAfter !== false) {
+          this.listenTimeout = setTimeout(() => {
+            this.startListening(speechResultHandler, options);
+          }, 60);
+        }
+      });
+      return;
+    }
+
     if (!this.synth) {
       if (options.listenAfter !== false) {
         this.startListening(onResult, options);
@@ -160,18 +274,17 @@ class VoiceController {
 
     const utterance = new SpeechSynthesisUtterance(text);
     this.activeUtterance = utterance;
-    utterance.rate = options.rate || 0.95; // Clearer pacing for migrant / low-literacy users
+    utterance.rate = options.rate || 0.95;
     utterance.pitch = options.pitch || 1.0;
-    utterance.lang = this.getSpeechCode(this.currentLanguage);
+    utterance.lang = this.getSpeechCode(targetLang);
 
-    // Select best matching voice for currentLanguage
     if (this.voices.length > 0) {
-      const code = this.getSpeechCode(this.currentLanguage);
-      const prefix = this.currentLanguage; // 'kn', 'hi', or 'en'
+      const code = this.getSpeechCode(targetLang);
+      const prefix = targetLang.toLowerCase();
       const matchVoice = this.voices.find(v => 
-        v.lang === code || 
-        v.lang.toLowerCase().startsWith(prefix) ||
-        v.name.toLowerCase().includes(prefix)
+        (v.lang || '').toLowerCase() === code.toLowerCase() || 
+        (v.lang || '').toLowerCase().startsWith(prefix) ||
+        (v.name || '').toLowerCase().includes(prefix)
       );
       if (matchVoice) {
         utterance.voice = matchVoice;
@@ -181,14 +294,14 @@ class VoiceController {
     this.isSpeaking = true;
     this.notifyStateChange();
 
-    const speechResultHandler = (finalText) => {
-      if (!finalText) return;
-      if (onResult) {
-        onResult(finalText.trim());
+    let utteranceFinished = false;
+    const cleanFinish = () => {
+      if (utteranceFinished) return;
+      utteranceFinished = true;
+      if (this.watchdogTimer) {
+        clearTimeout(this.watchdogTimer);
+        this.watchdogTimer = null;
       }
-    };
-
-    utterance.onend = () => {
       this.isSpeaking = false;
       this.activeUtterance = null;
       this.notifyStateChange();
@@ -197,26 +310,27 @@ class VoiceController {
         options.onSpeakEnd();
       }
 
-      // Immediate start listening after TTS playback ends (minimal 30ms delay to clear audio buffer)
       if (options.listenAfter !== false) {
         this.listenTimeout = setTimeout(() => {
           this.startListening(speechResultHandler, options);
-        }, 30);
+        }, 50);
       }
     };
 
+    utterance.onend = cleanFinish;
     utterance.onerror = (e) => {
       console.warn('TTS utterance error:', e);
-      this.isSpeaking = false;
-      this.activeUtterance = null;
-      this.notifyStateChange();
-
-      if (options.listenAfter !== false && e.error !== 'canceled' && e.error !== 'interrupted') {
-        this.listenTimeout = setTimeout(() => {
-          this.startListening(speechResultHandler, options);
-        }, 30);
-      }
+      cleanFinish();
     };
+
+    // Safety watchdog: prevent mobile browser TTS from hanging in isSpeaking=true forever
+    const maxSpeechMs = Math.max(3000, (text.length * 90) + 1500);
+    this.watchdogTimer = setTimeout(() => {
+      if (this.isSpeaking && this.activeUtterance === utterance) {
+        console.warn('[VoiceController] Utterance watchdog timeout, auto-advancing audio state');
+        cleanFinish();
+      }
+    }, maxSpeechMs);
 
     try {
       if (this.synth.paused) {
@@ -225,11 +339,7 @@ class VoiceController {
       this.synth.speak(utterance);
     } catch (err) {
       console.warn('[VoiceController] Speech synthesis speak call failed:', err);
-      this.isSpeaking = false;
-      this.notifyStateChange();
-      if (options.listenAfter !== false) {
-        this.startListening(onResult, options);
-      }
+      cleanFinish();
     }
   }
 
@@ -260,7 +370,6 @@ class VoiceController {
       this.recognition.start();
     } catch (e) {
       if (e.name === 'InvalidStateError') {
-        // Recognition already active or starting; restart cleanly
         try {
           this.recognition.abort();
         } catch (err) {}
@@ -271,7 +380,7 @@ class VoiceController {
           } catch (err2) {
             console.warn('[SpeechRec start retry error]:', err2);
           }
-        }, 30);
+        }, 50);
       } else {
         console.warn('[SpeechRec start error]:', e);
         this.isListening = false;
@@ -312,6 +421,17 @@ class VoiceController {
       clearTimeout(this.listenTimeout);
       this.listenTimeout = null;
     }
+    if (this.watchdogTimer) {
+      clearTimeout(this.watchdogTimer);
+      this.watchdogTimer = null;
+    }
+    if (this.audioPlayer) {
+      try {
+        this.audioPlayer.pause();
+        this.audioPlayer.currentTime = 0;
+      } catch (e) {}
+      this.audioPlayer = null;
+    }
     if (this.synth) {
       try {
         this.synth.cancel();
@@ -349,7 +469,6 @@ class VoiceController {
       if (detected && onLanguageSelected) {
         onLanguageSelected(detected);
       } else {
-        // If not detected immediately on first try, continue listening
         this.startListening((retryResult) => {
           const retryDetected = this.detectLanguageFromSpeech(retryResult);
           if (retryDetected && onLanguageSelected) {

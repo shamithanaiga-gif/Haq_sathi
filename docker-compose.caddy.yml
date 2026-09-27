@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: haq-saathi-web:latest
+    container_name: haq_saathi_web
+    restart: unless-stopped
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers --forwarded-allow-ips='*'
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+    networks:
+      - haq_network
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/schemes"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  proxy:
+    image: caddy:2-alpine
+    container_name: haq_saathi_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@haqsaathi.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend:/srv/frontend:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - haq_network
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  haq_network:
+    driver: bridge

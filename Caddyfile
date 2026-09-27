@@ -1,0 +1,85 @@
+# ==============================================================================
+# Haq Saathi - Caddyfile
+# Production Zero-Configuration Automatic HTTPS (Let's Encrypt / ZeroSSL)
+# ==============================================================================
+
+{
+    # Global Server Options
+    email {$LETSENCRYPT_EMAIL:admin@haqsaathi.org}
+    admin off
+}
+
+# Configured domain with fallback to localhost for internal TLS
+{$DOMAIN_NAME:localhost} {
+    # If DOMAIN_NAME is localhost or an IP address, Caddy automatically uses internal self-signed TLS.
+    # If DOMAIN_NAME is a registered FQDN, Caddy automatically provisions Let's Encrypt / ZeroSSL.
+
+    # Fast compression for low-bandwidth 2G/3G mobile networks
+    encode gzip zstd
+
+    # Audio & PWA Security Headers (Mandatory for Web Speech API and privacy)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Permissions-Policy "microphone=(self)"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # PWA Service Worker (Always Fresh, Scope at Root)
+    @sw path /sw.js /static/sw.js
+    handle @sw {
+        root * /srv
+        header Cache-Control "no-cache, no-store, must-revalidate"
+        header Service-Worker-Allowed "/"
+        header Content-Type "application/javascript"
+        rewrite * /frontend/sw.js
+        file_server
+    }
+
+    # PWA Web App Manifest
+    @manifest path /manifest.json /static/manifest.json
+    handle @manifest {
+        root * /srv
+        header Cache-Control "no-cache, no-store, must-revalidate"
+        header Content-Type "application/manifest+json"
+        rewrite * /frontend/manifest.json
+        file_server
+    }
+
+    # Static Assets (Long Immutable Cache for JS, CSS, Fonts, Icons)
+    @static path /static/*
+    handle @static {
+        root * /srv
+        header Cache-Control "public, max-age=31536000, immutable"
+        uri strip_prefix /static
+        rewrite * /frontend{uri}
+        file_server
+    }
+
+    # Reverse Proxy for FastAPI REST, WebSockets (streaming audio), and OpenAPI Docs
+    @backend path /api/* /api/v1/voice/stream* /docs* /openapi.json* /redoc*
+    handle @backend {
+        reverse_proxy app:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+
+            # Extended transport timeouts for long speech interactions and pauses
+            transport http {
+                response_header_timeout 300s
+                read_timeout 300s
+                write_timeout 300s
+            }
+        }
+    }
+
+    # Single Page Application Root & Client-Side Route Fallback
+    handle {
+        root * /srv/frontend
+        try_files {path} /index.html
+        header Cache-Control "no-cache"
+        file_server
+    }
+}

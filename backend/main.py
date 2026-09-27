@@ -11,7 +11,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+import urllib.parse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from backend.rules_engine import (
@@ -42,6 +43,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Permissions-Policy"] = "microphone=(self)"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    return response
+
+
+def ensure_seed_data():
+    """Populates DATA_DIR from data_seed if running with a fresh empty mounted cloud volume (Fly.io)."""
+    seed_dir = os.path.join(BASE_DIR, "data_seed")
+    if os.path.exists(seed_dir):
+        os.makedirs(DATA_DIR, exist_ok=True)
+        import shutil
+        for fname in os.listdir(seed_dir):
+            target = os.path.join(DATA_DIR, fname)
+            if not os.path.exists(target):
+                try:
+                    shutil.copy2(os.path.join(seed_dir, fname), target)
+                except Exception:
+                    pass
+
+
+ensure_seed_data()
 
 SCHEMES_FILE = os.path.join(DATA_DIR, "schemes_rules.json")
 
@@ -803,6 +834,34 @@ def api_get_status(phone: str, reference_id: Optional[str] = None, app_id: Optio
     raise HTTPException(status_code=404, detail="Application not found")
 
 
+@app.get("/api/tts")
+def stream_tts(text: str, lang: str = "kn"):
+    """
+    High-fidelity server-side TTS proxy for languages lacking pre-installed mobile voices (e.g. Kannada kn-IN).
+    Ensures 100% audio playback across all iOS and Android devices without requiring local voice downloads.
+    """
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text parameter is required")
+    clean_text = text.strip()[:300]
+    speech_lang = "kn" if lang == "kn" else ("hi" if lang == "hi" else "en")
+    tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={speech_lang}&client=tw-ob&q={urllib.parse.quote(clean_text)}"
+    try:
+        import requests
+        resp = requests.get(tts_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+        if resp.status_code == 200:
+            return Response(
+                content=resp.content,
+                media_type="audio/mpeg",
+                headers={
+                    "Cache-Control": "public, max-age=86400, immutable",
+                    "Content-Disposition": "inline"
+                }
+            )
+    except Exception as exc:
+        print(f"[TTS Error] {exc}")
+    raise HTTPException(status_code=502, detail="TTS service temporarily unavailable")
+
+
 # =====================================================================
 # Serve Static Frontend Files
 # =====================================================================
@@ -817,3 +876,31 @@ def serve_index():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "Haq Saathi backend running. Place frontend in /frontend/index.html"}
+
+
+@app.get("/sw.js")
+def serve_sw():
+    sw_file = os.path.join(FRONTEND_DIR, "sw.js")
+    if os.path.exists(sw_file):
+        return FileResponse(
+            sw_file,
+            media_type="application/javascript",
+            headers={
+                "Service-Worker-Allowed": "/",
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        )
+    raise HTTPException(status_code=404, detail="Service worker not found")
+
+
+@app.get("/manifest.json")
+def serve_manifest():
+    manifest_file = os.path.join(FRONTEND_DIR, "manifest.json")
+    if os.path.exists(manifest_file):
+        return FileResponse(
+            manifest_file,
+            media_type="application/manifest+json",
+            headers={"Cache-Control": "no-cache"}
+        )
+    raise HTTPException(status_code=404, detail="Manifest not found")
+

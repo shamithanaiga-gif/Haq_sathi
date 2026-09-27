@@ -1,0 +1,45 @@
+# ==============================================================================
+# Haq Saathi - Fly.io Application Configuration
+# Production FastAPI Backend with Persistent Volume in Mumbai (BOM)
+# ==============================================================================
+
+app = "haq-saathi-backend"
+primary_region = "bom" # Mumbai, India (Lowest latency for Kannada, Hindi & Indian English)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+  PYTHONUNBUFFERED = "1"
+
+# Persistent Volume for users_db.json, audit_log.json, and scheme data
+[mounts]
+  source = "haq_saathi_data"
+  destination = "/app/data"
+  initial_size = "1GB"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/api/schemes"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1
