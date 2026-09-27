@@ -1,0 +1,20 @@
+{
+  "user_id": "usr_ramesh_001",
+  "name": "Ramesh Naik",
+  "name_kn": "ರಮೇಶ್ ನಾಯ್ಕ್",
+  "age": 32,
+  "gender": "Male",
+  "occupation": "construction_worker",
+  "occupation_display": "Construction Labourer",
+  "occupation_display_kn": "ಕಟ್ಟಡ ಕಾರ್ಮಿಕ",
+  "monthly_income": 12000,
+  "annual_income": 144000,
+  "family_size": 4,
+  "native_district": "Kalaburagi",
+  "current_city": "Bengaluru",
+  "state": "Karnataka",
+  "state_resident": true,
+  "has_school_going_child": true,
+  "has_labour_card": true,
+  "preferred_language": "kn"
+}

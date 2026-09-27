@@ -56,7 +56,6 @@ latest_request.txt
 data/active_sessions.json
 data/audit_log.json
 data/users_db.json
-data/user_profile.json
 data/live_schemes_cache.json
 .bin/
 .certs/
