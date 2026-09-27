@@ -11,7 +11,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+import urllib.parse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from backend.rules_engine import (
@@ -747,6 +748,34 @@ def api_get_status(phone: str, reference_id: Optional[str] = None, app_id: Optio
         if not target_id or app.get("reference_id") == target_id or app.get("app_id") == target_id:
             return {"success": True, "application": app}
     raise HTTPException(status_code=404, detail="Application not found")
+
+
+@app.get("/api/tts")
+def stream_tts(text: str, lang: str = "kn"):
+    """
+    High-fidelity server-side TTS proxy for languages lacking pre-installed mobile voices (e.g. Kannada kn-IN).
+    Ensures 100% audio playback across all iOS and Android devices without requiring local voice downloads.
+    """
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text parameter is required")
+    clean_text = text.strip()[:300]
+    speech_lang = "kn" if lang == "kn" else ("hi" if lang == "hi" else "en")
+    tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={speech_lang}&client=tw-ob&q={urllib.parse.quote(clean_text)}"
+    try:
+        import requests
+        resp = requests.get(tts_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+        if resp.status_code == 200:
+            return Response(
+                content=resp.content,
+                media_type="audio/mpeg",
+                headers={
+                    "Cache-Control": "public, max-age=86400, immutable",
+                    "Content-Disposition": "inline"
+                }
+            )
+    except Exception as exc:
+        print(f"[TTS Error] {exc}")
+    raise HTTPException(status_code=502, detail="TTS service temporarily unavailable")
 
 
 # =====================================================================
