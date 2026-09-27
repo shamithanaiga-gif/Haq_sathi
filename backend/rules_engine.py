@@ -151,6 +151,27 @@ def evaluate_scheme_eligibility(scheme: Dict[str, Any], user_data: Dict[str, Any
             })
             is_eligible = False
 
+    # Rule: Maximum Age
+    if "max_age" in rules:
+        max_age = rules["max_age"]
+        user_age = user_data.get("age")
+        if user_age is not None and user_age <= max_age:
+            passed_rules.append({
+                "rule": "max_age",
+                "condition": f"Age <= {max_age} years",
+                "actual": f"Age: {user_age} years",
+                "passed": True
+            })
+        else:
+            actual_str = f"Age: {user_age} years" if user_age is not None else "Age not provided"
+            failed_rules.append({
+                "rule": "max_age",
+                "condition": f"Age <= {max_age} years",
+                "actual": actual_str,
+                "passed": False
+            })
+            is_eligible = False
+
     # Determine explanation from scheme's pre-configured bilingual/trilingual text
     explanation_map = scheme.get("explanation_text", {})
     outcome_key = "eligible" if is_eligible else "not_eligible"
@@ -167,6 +188,11 @@ def evaluate_scheme_eligibility(scheme: Dict[str, Any], user_data: Dict[str, Any
         "department_en": scheme.get("department_en"),
         "department_kn": scheme.get("department_kn"),
         "department_hi": scheme.get("department_hi") or scheme.get("department_en"),
+        "source_url": scheme.get("source_url"),
+        "source_type": scheme.get("source_type", "demo_reference"),
+        "is_live_search": scheme.get("is_live_search", False),
+        "live_search_note": scheme.get("live_search_note", ""),
+        "category": scheme.get("category", "other"),
         "eligible": is_eligible,
         "passed_rules": passed_rules,
         "failed_rules": failed_rules,
@@ -258,6 +284,11 @@ def check_all_scheme_eligibility(
                 "department_en": scheme.get("department_en"),
                 "department_kn": scheme.get("department_kn"),
                 "department_hi": scheme.get("department_hi") or scheme.get("department_en"),
+                "source_url": scheme.get("source_url"),
+                "source_type": scheme.get("source_type", "demo_reference"),
+                "is_live_search": scheme.get("is_live_search", False),
+                "live_search_note": scheme.get("live_search_note", ""),
+                "category": scheme.get("category", "other"),
                 "required_documents": scheme.get("required_documents", [])
             })
         else:
@@ -358,6 +389,8 @@ def check_all_scheme_eligibility(
         "summary_en": summary_en,
         "summary_kn": summary_kn,
         "summary_hi": summary_hi,
-        "total_schemes": len(schemes)
+        "total_schemes": len(schemes),
+        "source_type": schemes[0].get("source_type", "demo_reference") if schemes else "demo_reference",
+        "is_live_search": any(s.get("is_live_search") for s in schemes)
     }
 

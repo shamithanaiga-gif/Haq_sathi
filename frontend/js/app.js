@@ -104,6 +104,7 @@ function HaqSaathiApp() {
   // Dashboard & schemes scan state
   const [schemes, setSchemes] = useState(DEFAULT_SCHEMES);
   const [scanResults, setScanResults] = useState(null);
+  const [isBreakSearchActive, setIsBreakSearchActive] = useState(false);
   const [userApplications, setUserApplications] = useState([]);
   const [vaultDocs, setVaultDocs] = useState({});
   const [userAuditLogs, setUserAuditLogs] = useState([]);
@@ -896,12 +897,22 @@ function HaqSaathiApp() {
   // =====================================================================
   // Schemes For You — Full Scan Handling (Section 6)
   // =====================================================================
-  const runFullScan = async () => {
+  const runFullScan = async (breakSearch = false) => {
     if (!currentUser) return;
     setIsLoading(true);
     try {
-      const scan = await api.scanAllSchemes(currentUser.phone, lang, currentUser);
+      const scan = await api.scanAllSchemes(currentUser.phone, lang, currentUser, breakSearch);
       setScanResults(scan);
+      setIsBreakSearchActive(Boolean(breakSearch));
+      // Step 2: Cache converted structure in localStorage keyed by hash / profile
+      try {
+        const cachePayload = {
+          timestamp: Date.now(),
+          userPhone: currentUser.phone,
+          results: scan
+        };
+        localStorage.setItem(`haq_live_schemes_${currentUser.phone}`, JSON.stringify(cachePayload));
+      } catch (err) {}
       // Speak audio summary on scan load (Section 6)
       const summaryText = (scan.summary_kn && lang === 'kn') ? scan.summary_kn : ((scan.summary_hi && lang === 'hi') ? scan.summary_hi : scan.summary_en);
       speakAndListen(summaryText, lang, null, { listenAfter: false });
@@ -2614,19 +2625,79 @@ function HaqSaathiApp() {
               </button>
             </div>
 
-            {/* TAB 1: SCHEMES FOR YOU (Section 6) */}
+            {/* TAB 1: SCHEMES FOR YOU (Section 6 & Steps 1-4) */}
             {activeTab === 'schemes' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <p style={{ fontSize: '13px', color: '#64748b' }}>
-                    Deterministic scan across all state & central welfare entitlements.
+                {/* Live Discovery vs Fallback Banner */}
+                {scanResults && (scanResults.fallback_triggered || scanResults.source_type === 'demo_reference') ? (
+                  <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>⚠️</span>
+                        <div>
+                          <strong style={{ fontSize: '14px', color: '#92400e', display: 'block' }}>
+                            Demo reference schemes
+                          </strong>
+                          <span style={{ fontSize: '12px', color: '#b45309' }}>
+                            Live search was unavailable — showing demo reference schemes.
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{ background: '#f59e0b', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', letterSpacing: '0.5px' }}>
+                        DEMO FALLBACK
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>🔍</span>
+                        <div>
+                          <strong style={{ fontSize: '14px', color: '#065f46', display: 'block' }}>
+                            Live Scheme Discovery Active
+                          </strong>
+                          <span style={{ fontSize: '12px', color: '#047857' }}>
+                            Found via live search — verify current details on the official scheme page.
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{ background: '#10b981', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', letterSpacing: '0.5px' }}>
+                        LIVE WEB SEARCH
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                  <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                    Deterministic scan evaluated across real state & central welfare entitlements.
                   </p>
-                  <button
-                    onClick={runFullScan}
-                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    🔄 {t.recheck_scan_btn}
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      id="btn_test_break_search"
+                      onClick={() => runFullScan(!isBreakSearchActive)}
+                      style={{
+                        background: isBreakSearchActive ? '#fee2e2' : '#fef3c7',
+                        border: `1px solid ${isBreakSearchActive ? '#fca5a5' : '#fcd34d'}`,
+                        color: isBreakSearchActive ? '#991b1b' : '#92400e',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                      title="Test Scenario 3: Simulate breaking web search to verify honest fallback"
+                    >
+                      {isBreakSearchActive ? '🔄 Restore Live Search' : '⚡ Break Search (Test Fallback)'}
+                    </button>
+                    <button
+                      onClick={() => runFullScan(isBreakSearchActive)}
+                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      🔄 {t.recheck_scan_btn}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Submitted Applications Quick Section on Dashboard Home (Requirement 4) */}
@@ -2658,16 +2729,40 @@ function HaqSaathiApp() {
                     {scanResults.eligible.map((s) => (
                       <div key={s.scheme_id} className="scan-card eligible">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#047857' }}>
-                              {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
-                            </h4>
-                            <p style={{ fontSize: '13px', color: '#334155', marginTop: '4px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#047857', margin: 0 }}>
+                                {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
+                              </h4>
+                              {s.category && (
+                                <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', textTransform: 'capitalize' }}>
+                                  {s.category}
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: '13px', color: '#334155', marginTop: '6px', marginBottom: '6px' }}>
                               {(lang === 'kn' && s.benefit_kn) ? s.benefit_kn : ((lang === 'hi' && s.benefit_hi) ? s.benefit_hi : s.benefit_en)}
                             </p>
-                            <p style={{ fontSize: '12px', color: '#047857', fontWeight: 600, marginTop: '8px' }}>
+                            <p style={{ fontSize: '12px', color: '#047857', fontWeight: 600, marginTop: '4px', marginBottom: '4px' }}>
                               ✓ {(lang === 'kn' && s.raw_explanation_kn) ? s.raw_explanation_kn : ((lang === 'hi' && s.raw_explanation_hi) ? s.raw_explanation_hi : s.raw_explanation_en)}
                             </p>
+
+                            {/* Step 4: Source URL & Verification Attribution */}
+                            {s.source_url && (
+                              <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                                <a
+                                  href={s.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ fontSize: '12px', color: '#0284c7', textDecoration: 'underline', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  <span>🌐</span> Source: {s.source_url.replace('https://', '')}
+                                </a>
+                                <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                                  {s.live_search_note || 'Found via live search — verify current details on the official scheme page.'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <button
                             onClick={() => startSchemeApplication(s.scheme_id)}
@@ -2701,16 +2796,40 @@ function HaqSaathiApp() {
                     {scanResults.needs_more_info.map((s) => (
                       <div key={s.scheme_id} className="scan-card needs-info">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#b45309' }}>
-                              {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
-                            </h4>
-                            <p style={{ fontSize: '13px', color: '#334155', marginTop: '4px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#b45309', margin: 0 }}>
+                                {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
+                              </h4>
+                              {s.category && (
+                                <span style={{ background: '#fef3c7', color: '#b45309', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', textTransform: 'capitalize' }}>
+                                  {s.category}
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: '13px', color: '#334155', marginTop: '6px', marginBottom: '6px' }}>
                               {(lang === 'kn' && s.benefit_kn) ? s.benefit_kn : ((lang === 'hi' && s.benefit_hi) ? s.benefit_hi : s.benefit_en)}
                             </p>
-                            <div style={{ marginTop: '8px', fontSize: '12px', color: '#92400e' }}>
+                            <div style={{ marginTop: '6px', fontSize: '12px', color: '#92400e' }}>
                               <strong>{t.missing_fields_label}</strong> {s.missing_fields.map((f) => f.replace(/_/g, ' ')).join(', ')}
                             </div>
+
+                            {/* Step 4: Source URL & Verification Attribution */}
+                            {s.source_url && (
+                              <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                                <a
+                                  href={s.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ fontSize: '12px', color: '#0284c7', textDecoration: 'underline', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  <span>🌐</span> Source: {s.source_url.replace('https://', '')}
+                                </a>
+                                <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                                  {s.live_search_note || 'Found via live search — verify current details on the official scheme page.'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <button
                             onClick={() => handleAnswerMissingFields(s)}
@@ -2743,12 +2862,36 @@ function HaqSaathiApp() {
                     </h3>
                     {scanResults.not_eligible.map((s) => (
                       <div key={s.scheme_id} className="scan-card not-eligible">
-                        <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#475569' }}>
-                          {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
-                        </h4>
-                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#475569', margin: 0 }}>
+                            {(lang === 'kn' && s.scheme_name_kn) ? s.scheme_name_kn : ((lang === 'hi' && s.scheme_name_hi) ? s.scheme_name_hi : s.scheme_name_en)}
+                          </h4>
+                          {s.category && (
+                            <span style={{ background: '#f1f5f9', color: '#64748b', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', textTransform: 'capitalize' }}>
+                              {s.category}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px', marginBottom: '4px' }}>
                           {(lang === 'kn' && s.raw_explanation_kn) ? s.raw_explanation_kn : ((lang === 'hi' && s.raw_explanation_hi) ? s.raw_explanation_hi : s.raw_explanation_en)}
                         </p>
+
+                        {/* Step 4: Source URL & Verification Attribution */}
+                        {s.source_url && (
+                          <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                            <a
+                              href={s.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: '12px', color: '#0284c7', textDecoration: 'underline', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <span>🌐</span> Source: {s.source_url.replace('https://', '')}
+                            </a>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                              {s.live_search_note || 'Found via live search — verify current details on the official scheme page.'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

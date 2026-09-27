@@ -76,12 +76,18 @@ const api = {
     return await res.json();
   },
 
-  // Full Eligibility Scan (Section 6)
-  async scanAllSchemes(phone, language = 'kn', userData = null) {
+  // Full Eligibility Scan with Live Scheme Discovery (Section 6 & Step 1-4)
+  async scanAllSchemes(phone, language = 'kn', userData = null, forceBreakSearch = false) {
     const res = await fetch(`${API_BASE}/api/schemes/scan-all`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, language, user_data: userData })
+      body: JSON.stringify({
+        phone,
+        language,
+        user_data: userData,
+        force_break_search: forceBreakSearch,
+        use_live_search: true
+      })
     });
     return await res.json();
   },

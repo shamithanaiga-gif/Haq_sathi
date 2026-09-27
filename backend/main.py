@@ -31,6 +31,7 @@ from backend.user_store import (
     update_user_application_status, normalize_application,
     toggle_vault_permission, verify_session_token, clean_phone
 )
+from backend.live_schemes_service import get_live_discovered_schemes
 
 app = FastAPI(title="Haq Saathi API", description="Voice-first consent-based entitlement navigator")
 
@@ -165,6 +166,8 @@ class ScanAllRequest(BaseModel):
     phone: Optional[str] = "9876543210"
     user_data: Optional[Dict[str, Any]] = None
     language: Optional[str] = "kn"
+    force_break_search: Optional[bool] = False
+    use_live_search: Optional[bool] = True
 
 
 class ConsentActionRequest(BaseModel):
@@ -281,11 +284,20 @@ def api_get_dashboard(
         if not session_phone or session_phone != phone_clean:
             raise HTTPException(status_code=403, detail="Forbidden: You cannot access another user's data.")
 
-    # Run full eligibility scan across ALL schemes
-    all_schemes = get_all_schemes()
+    # Run live eligibility scan across discovered schemes for dashboard
+    fallback_schemes = get_all_schemes()
+    discovered_schemes, source_type, is_fallback = get_live_discovered_schemes(user, fallback_schemes)
     active_lang = lang or user.get("preferred_language", "kn")
     scan_results = check_all_scheme_eligibility(
-        all_schemes, user, lang=active_lang
+        discovered_schemes, user, lang=active_lang
+    )
+    scan_results["source_type"] = source_type
+    scan_results["is_live_search"] = (source_type == "live_search")
+    scan_results["fallback_triggered"] = is_fallback
+    scan_results["live_search_note"] = (
+        "Found via live search — verify current details on the official scheme page."
+        if source_type == "live_search"
+        else "Live search was unavailable — showing demo reference schemes."
     )
 
     # User-scoped audit logs (Section 9: never return raw global audit logs)
@@ -345,8 +357,25 @@ def api_scan_all_schemes(req: ScanAllRequest):
     user_profile = req.user_data or db.get(phone_clean) or get_user_profile()
     lang = req.language or "kn"
 
-    all_schemes = get_all_schemes()
-    scan_res = check_all_scheme_eligibility(all_schemes, user_profile, lang=lang)
+    fallback_schemes = get_all_schemes()
+    if req.use_live_search:
+        discovered_schemes, source_type, is_fallback = get_live_discovered_schemes(
+            user_profile,
+            fallback_schemes,
+            force_break_search=bool(req.force_break_search)
+        )
+    else:
+        discovered_schemes, source_type, is_fallback = fallback_schemes, "demo_reference", True
+
+    scan_res = check_all_scheme_eligibility(discovered_schemes, user_profile, lang=lang)
+    scan_res["source_type"] = source_type
+    scan_res["is_live_search"] = (source_type == "live_search")
+    scan_res["fallback_triggered"] = is_fallback
+    scan_res["live_search_note"] = (
+        "Found via live search — verify current details on the official scheme page."
+        if source_type == "live_search"
+        else "Live search was unavailable — showing demo reference schemes."
+    )
     return scan_res
 
 
