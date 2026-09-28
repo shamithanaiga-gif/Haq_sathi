@@ -2,7 +2,7 @@
 ### Voice-First, Consent-Governed Entitlement Navigator for Migrant Workers
 
 > **Haq Saathi** is an accessible, voice-first, consent-based web application designed for migrant workers and low-literacy citizens across India. It supports **English (`en-IN`)**, **Kannada (`kn-IN`)**, and **Hindi (`hi-IN`)** throughout, helping users discover, verify eligibility for, and apply for government welfare schemes without confusing bureaucratic jargon, middlemen, or privacy infringements.
-
+ 
 ---
 
 ## 🌟 Core Architecture & Specification Compliance
